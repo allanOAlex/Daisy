@@ -1,0 +1,111 @@
+﻿@page "/cancelevent"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject IEventApiClient eventApiClient
+@inject NavigationManager navigationManager
+@attribute [Authorize]
+
+<PageTitle>Delete Event</PageTitle>
+
+<RadzenTemplateForm TItem="CancelEventRequest" Data="@model" class="m-2">
+    <div class="mt-2">
+        <RadzenText TextStyle="TextStyle.Subtitle2" Text="Please confirm action" Style="font-size:15px;"/>
+        <br />
+    </div>
+    <div class="row">
+        <div class="col">
+            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Light" Text="Cancel" Icon="check_circle" Size="ButtonSize.Small" class="float-end m-1 rounded-pill" Click=@(() => Cancel(Id)) />
+            <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="Abort" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform:none;" class="float-end m-1 rounded-pill" Click=@Abort />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public CancelEventRequest? CancelEventRequest { get; set; }
+
+    [Parameter]
+    public GetAllEventsResponse? GetAllEventsResponse { get; set; }
+
+    CancelEventRequest? model = new CancelEventRequest();
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            model = CancelEventRequest;
+            model.Id = GetAllEventsResponse.Id;
+            Id = GetAllEventsResponse.Id;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+    }
+
+    async void Cancel(int Id)
+    {
+        try
+        {
+            var result = await eventApiClient.Cancel(Id);
+            if (!result.Successful)
+            {
+                await DialogService.Alert("Cancelling event failed", "Failed!!", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+            else
+            {
+                DialogService.Close();
+                await DialogService.Alert("Event Cancelled Successfully", "Success!!", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+
+    }
+
+    async void Cancel_Event(int Id, CancelEventRequest request)
+    {
+        try
+        {
+            var result = await eventApiClient.CancelEvent(Id, request);
+            if (!result.Successful)
+            {
+                await DialogService.Alert("Cancelling event failed", "Failed!!", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+            else
+            {
+                DialogService.Close();
+                await DialogService.Alert("Event Cancelled Successfully", "Success!!", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+        
+        
+    }
+
+    public async Task NavigateToUrl(string url)
+    {
+        navigationManager.NavigateTo(url);
+    }
+
+    void Abort()
+    {
+        DialogService.Close(model);
+    }
+
+
+}

@@ -1,0 +1,192 @@
+﻿@page "/login"
+@layout AuthLayout
+@inject IAuthApiClient authApiClient
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject ILogger<Login> logger;
+@inject IJSRuntime JS;
+
+<RadzenCard class="d-flex m-5 p-0 rz-border-radius-4 rz-shadow-10 rounded-3" Style="width: 30%; flex-direction: column; overflow: hidden; ">
+    <RadzenCard Class="rz-shadow-0 rz-border-radius-0 p-3 login-card-hearder" style="text-align: center; background-color:#424874 !important; color:#B5CBDE; width:100%!important;">
+        <RadzenText TextStyle="TextStyle.DisplayH6" TagName="TagName.H2" Class="rz-color-white mb-0">Login</RadzenText>
+    </RadzenCard>
+    <RadzenCard Class="rz-shadow-0 p-4 login-card-body" Style="width:100%!important;">
+        <RadzenTemplateForm TItem="LoginRequest" Data=@model Submit="@(() => HandleLogin(@model))" Action="/">
+            <div class="mb-3">
+                <strong><RadzenLabel Text="Username" Style="font-size:15px; color:#424874;" /></strong>
+                <RadzenTextBox Name="Username" @bind-Value="@model.UserName" Class="w-100" Style="height:30px;" />
+                <RadzenRequiredValidator Text="Username is required" Component="Username" />
+                <RadzenRegexValidator Component="Username" Text="Value must contain 3 or more alphanumeric characters" Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
+            </div>
+            <div class="mb-3">
+                <strong><RadzenLabel Text="Password" Style="font-size:15px;color:#424874;" /></strong>
+                <RadzenPassword Name="Password" @bind-Value="@model.Password" Class="w-100" Style="height:30px;" AutoComplete="false" @oninput=@(args => OnPasswardInput(args.Value.ToString())) />
+                <RadzenRequiredValidator Text="Password is required" Component="Password" />
+                <RadzenRegexValidator Component="Password" Text="@passwordErrorMessage" Pattern="@passwordRegex" Popup=@popup Style="position: relative" />
+            </div>
+            <div class="mb-3">
+                <RadzenCheckBox @bind-Value=@checkBoxValue Name="CheckBox" TValue="bool" Style="font-size:15px;" Change=@(args => RemeberMe(args)) />
+                <RadzenLabel Text="Remember Me" Component="CheckBox" Style="margin-left: 8px; vertical-align: middle;" />
+            </div>
+            <div class="mb-3">
+                <div class="row">
+                    <div class="col">
+                        <RadzenButton ButtonType="ButtonType.Reset" ButtonStyle="ButtonStyle.Secondary" Shade="Shade.Light" Text="Cancel" Icon="highlight_off" Size="ButtonSize.Small" Class=" m-1 w-100" Style="text-transform: none;" Click="@(() => NavigationManager.NavigateTo("/"))" />
+                    </div>
+                    <div class="col">
+                        <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Shade="Shade.Dark" Text="Login" Icon="check_circle" Size="ButtonSize.Small" Class=" m-1 w-100" Style="text-transform: none;" />
+                    </div>
+                </div>
+            </div>
+            <div class="mt-2 d-flex justify-content-center" style="margin: auto; width:100%; ">
+                <a class="nav-link active" aria-current="page" @onclick="@(() => ForgotPassword())">Forgot Password?</a>
+            </div>
+        </RadzenTemplateForm>
+    </RadzenCard>
+</RadzenCard>
+
+@if (ShowErrors)
+{
+    @if (!string.IsNullOrEmpty(validationMessage))
+    {
+        <RadzenCard>
+            <div class="alert alert-danger">@validationMessage</div>
+        </RadzenCard>
+    }
+
+}
+
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public string LoginText { get; set; } = "Login";
+
+    [Parameter]
+    public LoginRequest? LoginRequest { get; set; }
+
+    LoginRequest model = new LoginRequest();
+    ForgotPasswordRequest forgotPasswordRequest = new();
+
+    private ElementReference firstInput;
+    private string validationMessage;
+
+
+
+    string alphanumericRegex = @"^[a-zA-Z0-9 _@./#&+-]{3,}$";
+    string passwordRegex = @"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$";
+    string passwordErrorMessage = "\n" +
+        "Must have a minimum of 8 characters in length \n " +
+        "Must contain at least one uppercase English letter \n" +
+        "Must contain at least one lowercase English letter \n" +
+        "Must contain at least one digit \n" +
+        "Must contain at least one special character";
+
+    bool popup;
+    bool checkBoxValue;
+    private bool ShowErrors;
+    private string error = "";
+    private IEnumerable<string>? Errors;
+
+    #region Methods
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        LoginText = string.Empty;
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+    }
+
+    private async Task HandleLogin(LoginRequest loginRequest)
+    {
+        try
+        {
+            logger.LogInformation($"Login attempt by {loginRequest.UserName}.");
+            var response = await authApiClient.LoginWithSignInManager(loginRequest);
+            if (!response.Successful)
+            {
+                ShowErrors = true;
+                validationMessage = response.Message;
+                logger.LogInformation($"Login failed for username: {loginRequest.UserName}.");
+
+            }
+            else
+            {
+                logger.LogError($"Successful login for username: {loginRequest.UserName}.");
+
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while trying to login.");
+            Error.ProcessException(ex);
+        }
+
+    }
+
+    void ForgotPassword()
+    {
+        NavigationManager.NavigateTo("/forgotpassword");
+        
+    }
+
+    public async Task ForgotPasswordDialog()
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Add New User" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<ForgotPassword>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "ForgotPasswordRequest",  forgotPasswordRequest}
+               },
+               new DialogOptions()
+               {
+                   Width = "400px",
+                   Height = "200px",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+
+
+               });
+
+        StateHasChanged();
+
+    }
+
+    void OnPasswardInput(string value)
+    {
+        model.Password = value;
+    }
+
+    void RemeberMe(bool? value)
+    {
+        model.RememberMe = value;
+    }
+
+    public async void GoBack()
+    {
+        await JS.InvokeVoidAsync("GoBack");
+    }
+
+    
+    #endregion  
+
+    
+
+    
+
+}
+
+
+

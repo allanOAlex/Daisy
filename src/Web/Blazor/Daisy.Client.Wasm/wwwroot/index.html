@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Daisy.Client.Wasm</title>
+    <base href="/" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="css/font-awesome/css/fontawesome.css" rel="stylesheet" />
+    <link href="Daisy.Client.Wasm.styles.css" rel="stylesheet" />
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/material-base.css">
+
+
+    
+
+    <style>
+        .rz-dialog-titlebar {
+            background-color: #424874 !important;
+            color: #B5CBDE !important;
+            height: 65px !important;
+            font-size: 18px !important;
+        }
+
+        .rz-group-header {
+            color: white !important;
+            display: none !important;
+        }
+
+        .rz-datatable-thead th .rz-column-title {
+            font-weight: bold !important;
+        }
+
+        .sidebar[b-uizignc2pk] {
+            background-image: linear-gradient(#FFFFFF 100%, #FFFFFF 100%) !important;
+        }
+
+        .rz-dialog {
+            top: 80px !important;
+            bottom: 160px !important;
+        }
+
+        .rz-dialog-content {
+            height: 100% !important;
+            overflow: hidden;
+            overflow-y: scroll;
+        }
+
+        .nav-item[b-0yiwrmy5f1] a.active {
+            background-color: #424874 !important;
+            color: white;
+        }
+
+        .nav-item[b-0yiwrmy5f1] a {
+            color: #424874;
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .hidden-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hidden-scroll {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .carousel-control-next, .carousel-control-prev {
+            z-index: 0 !important;
+        }
+
+        .nav-link-font {
+            font-size: 20px;
+            font-weight: 200;
+        }
+
+        .focusedInput {
+            border-color: rgba(82,168,236,.8);
+            outline: 0;
+            outline: thin dotted \9;
+            -moz-box-shadow: 0 0 8px rgba(82,168,236,.6);
+            box-shadow: 0 0 8px rgba(82,168,236,.6) !important;
+        }
+
+        .form-control {
+            height: 30px !important;
+        }
+
+        .child-center {
+            position: relative;
+            top: 8rem;
+            
+        }
+        .show-xs-only {
+            display: none;
+        }
+
+        .table {
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+        .content {
+            padding-top: 7rem;
+        }
+        
+
+        /* Landscape */
+        @media (min-width: 741px) and (max-width: 980px) {
+            .rz-dialog {
+                width: 700px!important;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .navbar {
+                height: auto;
+                overflow: auto;
+                font-size: 12px !important;
+            }
+
+            .top-row {
+                height: 9rem!important;
+                padding-top:2rem!important;
+                overflow: auto;
+            }
+
+            .sidebar {
+                height: auto;
+                overflow: auto;
+            }
+
+            .navbar-toggler{
+                top:5rem!important;
+                font-size:0.8rem!important;
+            }
+
+            .content {
+                padding-bottom: 6rem !important;
+                font-size: 10px !important;
+            }
+
+            .a {
+                font-size: 10px !important;
+            }
+
+            .p {
+                font-size: 10px !important;
+            }
+
+            .card-title {
+                font-size: 13px !important;
+            }
+
+            footer {
+                font-size: 10px !important;
+            }
+
+            .child-center {
+                position: relative;
+                top: 4rem;
+                /*left: 40%;*/
+                /*margin: -25px 0 0 -25px;*/ /* Apply negative top and left margins to truly center the element */
+            }
+            .show-xs-only{
+                display:block;
+            }
+
+            .show-md-only{
+                display:none;
+            }
+
+            
+        }
+
+        @media (min-width: 360px) and (max-width: 740px) {
+            .rz-card {
+                width: 90% !important;
+                
+            }
+
+            .login-card-body, login-card-header {
+                width: 100% !important;
+            }
+
+            .row {
+                width: 95% !important;
+            }
+
+            .wider-on-sm {
+                width: 50px !important
+            }
+        }
+
+        @media (min-width: 280px) and (max-width: 653px) {
+            .rz-card {
+                width: 100% !important;
+                font-size: 10px !important;
+            }
+
+            .rz-label {
+                font-size: 10px !important;
+            }
+
+            .rz-button-sm{
+                font-size:0.55rem!important;
+                font-weight:200;
+                padding:0.375rem, 0.1rem!important;
+            }
+
+            .login-card-body, login-card-header {
+                width: 100% !important;
+            }
+
+            .row {
+                width: 105% !important;
+            }
+
+            .wider-on-sm {
+                width: 50px !important
+            }
+        }
+
+        @media (max-width: 375px) {
+            .top-row {
+                height: 10rem !important;
+                padding-top: 5rem !important;
+                overflow: auto;
+            }
+
+            .show-xs-only {
+                display: block;
+            }
+
+            .show-md-only {
+                display: none;
+            }
+
+            
+            
+        }
+
+        @media (max-width: 667px) {
+            .top-row {
+                height: 9rem !important;
+                padding-top: 5rem !important;
+                overflow: auto;
+            }
+
+            .shared-footer {
+                font-size: 10px !important;
+            }
+        }
+
+
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div style="position: absolute; top: 50%; left: 50%; margin: -50px 0 0 -50px; ">
+            <div class="spinner-border"></div>
+        </div>
+    </div>
+
+
+    <div id="blazor-error-ui" style="position: absolute; top: 80%; left: 30%; bottom: 10%; right: 30%; width: 40% !important; ">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    <script src="_content/BlazorStrap/popper.min.js"></script>
+    <script src="_content/BlazorStrap/blazorstrap.js"></script>
+    <script src="js/table_search_filter.js"></script>
+    <script src="js/helpers.js"></script>
+    <script src="css/font-awesome/js/all.min.js"></script>
+
+
+
+
+</body>
+
+</html>

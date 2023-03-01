@@ -1,0 +1,126 @@
+﻿@page "/viewevent"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject IEventApiClient eventApiClient
+@inject NavigationManager navigationManager
+@attribute [Authorize]
+
+<PageTitle>Event Details</PageTitle>
+
+<div class="row">
+    <div class="d-flex justify-content-between">
+        <div class="col-xs-12 col-sm-4 col-md-4 show-md-only">
+            <div class="me-1 hidden-scroll" style=" justify-content:space-between; overflow-y: scroll;">
+                <RadzenImage Path="@Image" style="max-width:200px; height:250px;" />
+            </div>
+        </div>
+        <div class="col">
+            <div class="ms-2">
+                <div class="row mb-2 show-xs-only">
+                    <div class="col-xs-12 col-sm-12 col-md-12 show-xs-only">
+                        <div class="me-1 hidden-scroll" style="height: 20rem; justify-content:center; overflow-y: scroll;">
+                            <RadzenImage Path="@Image" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-xs-12 col-sm-6 col-md-4 mb-2">
+                        <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Title</strong></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.Title)</strong></RadzenText>
+                    </div>
+                    <div class="col-xs-12 col-sm-6 col-md-8">
+                        <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Description</strong></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.Description)</strong></RadzenText>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-xs-12 col-sm-4 col-md-4">
+                        <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Start Date</strong></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="mb-0">
+                            <strong>@(model.StartDate.ToString("dddd, dd MMMM yyyy"))</strong>
+                        </RadzenText>
+                    </div>
+                    <div class="col-xs-12 col-sm-4 col-md-4">
+                        <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Time</strong></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="mb-0">
+                            <strong>@(model.Time.ToString("T"))</strong>
+                        </RadzenText>
+                    </div>
+                    <div class="col-xs-12 col-sm-4 col-md-4">
+                        <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>End Date</strong></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="mb-0">
+                            <strong>@(model.EndDate.ToString("dddd, dd MMMM yyyy"))</strong>
+                        </RadzenText>
+                    </div>
+                </div>
+                <div class="row mb-5">
+                    <div class="col-xs-12 col-sm-6 col-md-6">
+                        <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Location</strong></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.Location)</strong></RadzenText>
+                    </div>
+                    <div class="col-xs-12 col-sm-6 col-md-6">
+                        <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Venue</strong></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.Venue)</strong></RadzenText>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>  
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public string Image { get; set; } = "";
+
+
+    [Parameter]
+    public GetEventByIdResponse? GetEventByIdResponse { get; set; }
+
+    [Parameter]
+    public GetAllEventsResponse? GetAllEventsResponse { get; set; }
+
+    GetEventByIdResponse? model = new GetEventByIdResponse();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            Image = GetAllEventsResponse.Image;
+            Image = $"data:{GetAllEventsResponse.ImageType};base64,{Convert.ToBase64String(GetAllEventsResponse.ImageData)}";
+            model = GetEventByIdResponse;
+            model.Id = GetAllEventsResponse.Id;
+            model.Image = GetAllEventsResponse.Image; ;
+            model.Title = GetAllEventsResponse.Title;
+            model.Description = GetAllEventsResponse.Description;
+            model.StartDate = GetAllEventsResponse.StartDate;
+            model.Time = GetAllEventsResponse.Time;
+            model.EndDate = GetAllEventsResponse.EndDate;
+            model.Location = GetAllEventsResponse.Location;
+            model.Venue = GetAllEventsResponse.Venue;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+        
+    }
+
+    void Close()
+    {
+        DialogService.Close(model);
+    }
+
+}

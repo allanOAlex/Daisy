@@ -1,0 +1,38 @@
+﻿@page "/roles"
+@inject RoleApiClient roleApiClient
+@inject ILogger<Users> logger;
+
+<PageTitle>Roles</PageTitle>
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    IEnumerable<GetAllRolesResponse> roles = new List<GetAllRolesResponse>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        try
+        {
+            var response = await roleApiClient.GetAllRoles();
+            if (response.Count > 0)
+            {
+                logger.LogInformation("Users fetching success.");
+                roles = response;
+            }
+
+            roles = response;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while fetching users.");
+            Error.ProcessException(ex);
+
+        }
+
+    }
+
+}

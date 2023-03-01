@@ -1,0 +1,145 @@
+﻿@page "/error"
+@inject NavigationManager NavigationManager
+@inject IHttpContextAccessor httpContextAccessor
+
+<CascadingValue Value="this">
+    @ChildContent
+</CascadingValue>
+
+@code {
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    public Error()
+    {
+
+    }
+
+    public Error(IHttpContextAccessor HttpContextAccessor)
+    {
+        httpContextAccessor = HttpContextAccessor;
+    }
+
+
+
+    public async void ProcessException(Exception ex)
+    {
+        await HandleExceptions(httpContextAccessor.HttpContext, ex);
+        StateHasChanged();
+    }
+
+    public async Task HandleExceptions(HttpContext httpContext, Exception exception)
+    {
+        HttpStatusCode status = HttpStatusCode.OK;
+        var stackTrace = string.Empty;
+        string message;
+        
+        if (exception.InnerException != null)
+        {
+            exception = exception.InnerException;
+        }
+
+        var exType = exception.GetType();
+
+        if (exType.Name == nameof(HttpRequestException))
+        {
+            message = exception.Message;
+            if (message.Contains(HttpStatusCode.NotFound.ToString()))
+            {
+                status = HttpStatusCode.NotFound;
+                stackTrace = exception.StackTrace;
+                NavigationManager.NavigateTo("/404");
+                
+            }
+            else if (message.Contains(HttpStatusCode.BadRequest.ToString()))
+            {
+                status = HttpStatusCode.BadRequest;
+                stackTrace = exception.StackTrace;
+                NavigationManager.NavigateTo("/400");
+            }
+            else if (message.Contains(HttpStatusCode.Unauthorized.ToString()))
+            {
+                status = HttpStatusCode.Unauthorized;
+                stackTrace = exception.StackTrace;
+                NavigationManager.NavigateTo("/401");
+            }
+            else if (message.Contains(HttpStatusCode.Forbidden.ToString()))
+            {
+                status = HttpStatusCode.Forbidden;
+                stackTrace = exception.StackTrace;
+                NavigationManager.NavigateTo("/403");
+            }
+            else 
+            {
+                status = HttpStatusCode.InternalServerError;
+                stackTrace = exception.StackTrace;
+                NavigationManager.NavigateTo("/500");
+            }
+        }
+        else if (exType.Name == nameof(BadRequestException))
+        {
+            message = exception.Message;
+            status = HttpStatusCode.BadRequest;
+            stackTrace = exception.StackTrace;
+            NavigationManager.NavigateTo("/400");
+        }
+        else if (exType.Name == nameof(ForbiddenException))
+        {
+            status = HttpStatusCode.Forbidden;
+            message = exception.Message;
+            stackTrace = exception.StackTrace;
+            NavigationManager.NavigateTo("/403");
+        }
+        else if (exType.Name == nameof(KeyNotFoundException))
+        {
+            status = HttpStatusCode.Unauthorized;
+            message = exception.Message;
+            stackTrace = exception.StackTrace;
+            NavigationManager.NavigateTo("/404");
+        }
+        else if (exType.Name == nameof(NotFoundException))
+        {
+            message = exception.Message;
+            status = HttpStatusCode.NotFound;
+            stackTrace = exception.StackTrace;
+            NavigationManager.NavigateTo("/404");
+        }
+        else if (exType.Name == nameof(NotImplementedException))
+        {
+            status = HttpStatusCode.NotImplemented;
+            message = exception.Message;
+            stackTrace = exception.StackTrace;
+            NavigationManager.NavigateTo("/500");
+        }
+        else if (exType.Name == nameof(UnauthorizedAccessException))
+        {
+            status = HttpStatusCode.Unauthorized;
+            message = exception.Message;
+            stackTrace = exception.StackTrace;
+            NavigationManager.NavigateTo("/401");
+        }
+        else
+        {
+            status = HttpStatusCode.InternalServerError;
+            message = exception.Message;
+            stackTrace = exception.StackTrace;
+            NavigationManager.NavigateTo("/500");
+        }
+
+        if (httpContext != null)
+        {
+            httpContext.Response.ContentType = "application/json";
+            httpContext.Response.StatusCode = (int)status;
+            await httpContext.Response.WriteAsync(new ErrorDetailsDto()
+            {
+                StatusCode = httpContext.Response.StatusCode,
+                Message = $"(Custom Middleware)Error|{exception.Message}"
+            }.ToString());
+        }
+
+        return;
+        
+    }
+
+}

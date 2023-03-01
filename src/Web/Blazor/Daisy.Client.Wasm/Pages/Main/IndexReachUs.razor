@@ -1,0 +1,236 @@
+﻿@page "/reachus"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject IAppointmentApiClient appointmentApiClient
+@inject NavigationManager navigationManager
+
+
+<div class="container mt-1">
+   
+    <br />
+    <BSCard CardType="CardType.Title" Class="mt-4 mb-1 text-center" style="font-weight:bold; color:#424874;">Get In Touch With Us</BSCard>
+    <RadzenText TextStyle="TextStyle.H6" Style="color:#c5a600;" class="mb-5 text-center"><strong>Appointment Form</strong></RadzenText>
+    <BSCard class="border-0 bg-transparent mt-4 mb-3">
+        <RadzenTemplateForm TItem="CreateAppointmentRequest" Data="@model" class="m-2" Submit="@(() => BookAppointment(@model))">
+            <div class="row">
+                <div class="col-xs-12 col-sm-4 col-md-4">
+                    <div class="form-group mb-3">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Salutation</RadzenText>
+                        <InputSelect id="salutation" @bind-Value="SalutationId" @onchange="@OnSelectSalutation" 
+                        class="form-control-sm form-select">
+                            <option value="">-- Select --</option>
+                            @foreach (var salutation in Salutations)
+                            {
+                                <option value="@salutation.SalutationId">@salutation.Description</option>
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-4 col-md-4">
+                    <div class="form-group mb-3">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">First Name</RadzenText>
+                        <RadzenTextBox Name="FirstName" @bind-Value=@model.FirstName Class="w-100" />
+                        <RadzenRequiredValidator Text="This field is required" Component="FirstName" Popup=@popup Style="position: absolute" />
+                        <RadzenRegexValidator Component="FirstName" Text="Value must be alphabetic" Pattern="^[a-zA-Z]*$" Popup=@popup Style="position: relative" />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-4 col-md-4">
+                    <div class="form-group mb-3">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Middle Name</RadzenText>
+                        <RadzenTextBox Name="MiddleName" @bind-Value=@model.MiddleName Placeholder="(Optional)" Class="w-100" />
+                        <RadzenRegexValidator Component="MiddleName" Text="Value must be alphabetic" Pattern="^[a-zA-Z]*$" Popup=@popup Style="position: relative" />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-4 col-md-12">
+                    <div class="form-group mb-3">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Last Name</RadzenText>
+                        <RadzenTextBox Name="LastName" @bind-Value=@model.LastName Class="w-100" />
+                        <RadzenRequiredValidator Text="This field is required" Component="LastName" Popup=@popup Style="position: relative" />
+                        <RadzenRegexValidator Component="LastName" Text="Value must be alphabetic" Pattern="^[a-zA-Z]*$" Popup=@popup Style="position: relative" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12 col-sm-4 col-md-4">
+                    <div class="form-group mb-3">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Contact Number</RadzenText>
+                        <RadzenMask Mask="*** *** ****" CharacterPattern="[0-9]" Placeholder="000 000 0000" Name="Phone" @bind-Value=@model.ContactNumber Style="width: 100%;" />
+                        <RadzenRequiredValidator Text="This field is required" Component="Phone" Popup=@popup Style="position: relative" />
+                         <RadzenRegexValidator Component="Phone" Text="Value must be 10 digits" Pattern="@formattedPhoneRegex"Popup=@popup Style="position: relative" />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-8 col-md-8">
+                    <div class="form-group mb-3">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Email</RadzenText>
+                        <RadzenTextBox Name="Email" @bind-Value=@model.Email Class="w-100" />
+                        <RadzenRequiredValidator Text="This field is required" Component="Email" Popup=@popup Style="position: relative" />
+                        <RadzenRegexValidator Component="Email" Text="Please provide a valid email address" Pattern="@emailRegex" Popup=@popup Style="position: relative" />
+                  </div>
+                </div>
+                <div class="col-xs-12 col-sm-4 col-md-6">
+                    <div class="form-group mb-3">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Date</RadzenText>
+                        <RadzenDatePicker DateFormat="d" Name="Date" TValue="DateTime?" Min="DateTime.Today.AddDays(0)" ShowTime="false" DateRender=@DateRenderSpecial Change=@(args => GetSelectedDate(args)) Class="w-100" />
+                        <RadzenRequiredValidator Text="This field is required" Component="Date" Popup=@popup Style="position: relative" />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-4 col-md-6">
+                    <div class="form-group mb-3">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Time</RadzenText>
+                        <RadzenDatePicker Name="Time" TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" ShowSeconds="false" HourFormat="24" Change=@(args => GetSelectedTime(args)) Class="w-100" />
+                        <RadzenRequiredValidator Text="This field is required" Component="Time" Popup=@popup Style="position: relative" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12 col-sm-6 col-md-6">
+                    <div class="form-group mb-3">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Location</RadzenText>
+                        <RadzenTextArea Name="Location" @bind-Value="@model.PreferedLocation" Class="w-100 h-50" />
+                        <RadzenRegexValidator Component="Location" Text="Value must contain 3 or more alphanumeric characters"Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
+                        <RadzenRequiredValidator Text="This field is required" Component="Location" Popup=@popup Style="position: relative" />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6 col-md-6">
+                    <div class="form-group mb-3">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Remarks</RadzenText>
+                        <RadzenTextArea Name="Remarks" @bind-Value="@model.Remarks" Class="w-100 h-50" />
+                        <RadzenRegexValidator Component="Remarks" Text="Value must contain 3 or more alphanumeric characters" Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col">
+                    <RadzenButton ButtonType="ButtonType.Reset" ButtonStyle="ButtonStyle.Light" Text="Reset" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform: none;" class="float-end m-1 rounded-pill" Click="@(() => RefreshAppoinmentForm(model))" />
+                    <RadzenButton ButtonType="ButtonType.Reset" Text="Cancel" Icon="refresh" Size="ButtonSize.Small" Style="background-color:#444444;text-transform: none;" class="float-end m-1 rounded-pill" />
+                    <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" Shade="Shade.Dark" Icon="check_circle" Text="Submit" class="float-end m-1 rounded-pill" Style="text-transform: none;"></RadzenButton>
+                </div>
+            </div>
+        </RadzenTemplateForm>
+    </BSCard>
+    <br />
+   
+</div>
+@if (!string.IsNullOrEmpty(validationMessage))
+{
+    <div class="alert alert-danger">@validationMessage</div>
+}
+
+
+
+@code {
+
+
+    [CascadingParameter]
+    public Task<AuthenticationState>? AuthState { get; set; }
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public EventCallback<DateTime> TimeValueChanged { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    bool popup;
+    string phoneRegex = @"/^\d$/";
+    string emailRegex = @"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$";
+    string formattedPhoneRegex = @"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$";
+    string alphanumericRegex = @"^[a-zA-Z0-9 _@./#&+-]{3,}$";
+
+    public string SalutationId { get; set; } = "";
+    public string SalutationText { get; set; } = "";
+    private string validationMessage;
+
+    SalutationDto salutationDto = new();
+    CreateAppointmentRequest model = new ();
+    List<SalutationDto> Salutations = new()
+    {
+        new SalutationDto{SalutationId = 1, Description = "Mr"},
+        new SalutationDto{SalutationId = 2, Description = "Mrs"},
+        new SalutationDto{SalutationId = 3, Description = "Other"}
+    };
+    IEnumerable<DateTime> today = new DateTime[] { DateTime.Today.AddDays(0) };
+
+
+    async void BookAppointment(CreateAppointmentRequest request)
+    {
+        try
+        {
+            if (!ValidateSalutation())
+            {
+                return;
+            }
+            request.Salutation = int.Parse(SalutationId);
+            var response = await appointmentApiClient.CreateAppointment(request);
+            if (response.Successful)
+            {
+                
+                RefreshAppoinmentForm(request);
+                await DialogService.Alert("Appointment Created Successfully", $"{DialogExtensions.successHeader}", new AlertOptions() { Height = "200px",  OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+            else
+            {
+                await DialogService.Alert("Error creating appointment. Please contact system administrator.", $"{DialogExtensions.failureHeader}", new AlertOptions() { Height = "220px", OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+                return;
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+    }
+
+    void DateRenderSpecial(DateRenderEventArgs args)
+    {
+        if (today.Contains(args.Date))
+        {
+            args.Attributes.Add("style", "background-color: #ff6d41; border-color: white;");
+        }
+
+    }
+
+    void OnSelectSalutation(ChangeEventArgs e)
+    {
+        SalutationText = e.Value.ToString();
+    }
+
+    void GetSelectedDate(DateTime? dateTime)
+    {
+        model.Date = (DateTime)dateTime.Value;
+        TimeValueChanged.InvokeAsync(model.Date);
+    }
+
+    void GetSelectedTime(DateTime? dateTime)
+    {
+        model.Time = (DateTime)dateTime.Value;
+        TimeValueChanged.InvokeAsync(model.Time);
+    }
+
+    private bool ValidateSalutation()
+    {
+        if (string.IsNullOrEmpty(SalutationId))
+        {
+            validationMessage = "Please select a gender";
+            return false;
+        }
+        else
+        {
+            validationMessage = "";
+            return true;
+        }
+    }
+
+    public void RefreshAppoinmentForm(CreateAppointmentRequest request)
+    {
+        model = new CreateAppointmentRequest();
+        StateHasChanged();
+
+    }
+
+
+
+}

@@ -1,0 +1,340 @@
+﻿@page "/users"
+@implements IDisposable
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IConfiguration Config
+@inject IUserApiClient userApiClient
+@inject ILogger<Users> logger;
+@attribute [Authorize]
+
+<PageTitle>Users</PageTitle>
+
+<br />
+<div class="table-responsive">
+    <BSTable class="table table-sm table-condensed table-striped table-hover dt-responsive display nowrap caption-top" style="border: 1px solid grey;">
+        <caption class="pt-0"><strong>Users</strong></caption>
+        <BSTHead class="thead-dark position-sticky" style="background-color:#424874; color:#B5CBDE;font-weight:normal;">
+            <BSTR>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>
+                    <AuthorizeView Roles="SuperAdmin">
+                        <RadzenButton ButtonStyle="ButtonStyle.Secondary" ButtonType="ButtonType.Button" Icon="add_circle_outline" Shade="Shade.Light" Text="Add New" Size="ButtonSize.Small" class="float-end m-1" Style="text-transform: none;" Click=@CreateUserDialog />
+                    </AuthorizeView>
+                </th>
+            </BSTR>
+        </BSTHead>
+        <BSTBody>
+            @if (users.Count() > 0)
+            {
+                @foreach (var item in users)
+                {
+                    <BSTR style="font-size:15px">
+                        <BSTD>@item.FirstName</BSTD>
+                        <BSTD>@item.LastName</BSTD>
+                        <BSTD>@item.Email</BSTD>
+                        <BSTD>@item.Phone</BSTD>
+                        <BSTD>
+                            <RadzenButton ButtonType="ButtonType.Button" Icon="delete" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Light" Variant="Variant.Flat" Size="ButtonSize.Small" Text="" class="float-end m-1" Style="text-transform: none;" Click="() => DeleteUserDialog(item)" />
+                            <RadzenButton ButtonType="ButtonType.Button" Icon="edit" ButtonStyle="ButtonStyle.Dark" Variant="Variant.Flat" Size="ButtonSize.Small" Text="" class="float-end m-1" Style="text-transform: none;" Click="() => EditUserDialog(item)" />
+                            <RadzenButton ButtonType="ButtonType.Button" Icon="info" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" Text="" class="float-end m-1" Style="text-transform: none;" Click="() => ViewUserDialog(item)" />
+                        </BSTD>
+                    </BSTR>
+                }
+            }
+            else if (users.Count() <= 0)
+            {
+                <tr>
+                    <td colspan="100">
+                        <br>
+                        <p>
+                            <strong>
+                                No records to display
+                            </strong>
+                        </p>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                <tr>
+                    <td colspan="100">
+                        <br>
+                        <BSSpinner Color="BSColor.Primary" />
+                    </td>
+                </tr>
+            }
+        </BSTBody>
+    </BSTable>
+
+</div>
+<br />
+<br />
+
+<BSDataTable FetchItems="FetchItems" PaginationBottom="true" StartPage="_startPage" RowsPerPage="20" Context="item" Class="table-striped table-sm table-responsive table-responsive-lg table-responsive-md table-responsive-sm border border-light">
+    <Header>
+        <BSDataTableHead TValue="GetAllUsersResponse" Sortable="true" Column="@(nameof(GetAllUsersResponse.FirstName))" ColumnFilter="true">First Name</BSDataTableHead>
+        <BSDataTableHead TValue="GetAllUsersResponse" Sortable="true" Column="@(nameof(GetAllUsersResponse.Email))" ColumnFilter="true">Email</BSDataTableHead>
+        <BSDataTableHead TValue="GetAllUsersResponse" Sortable="true" Column="@(nameof(GetAllUsersResponse.Phone))" ColumnFilter="true" >Contact Number</BSDataTableHead>
+    </Header>
+    <Body>
+        <BSDataTableRow >
+            <BSTD>
+                @item.FirstName
+            </BSTD>
+            <BSTD>
+                @item.Email
+            </BSTD>
+            <BSTD>
+                @item.Phone
+            </BSTD>
+        </BSDataTableRow>
+    </Body>
+</BSDataTable>
+<br />
+
+@code {
+
+    [CascadingParameter]
+    public Task<AuthenticationState>? AuthState { get; set; }
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public IEnumerable<GetAllUsersResponse>? UserList { get; set; }
+
+    
+    public int Param { get; set; } = 1;
+    private bool authFailed;
+    private readonly int _startPage = 2;
+    public string UserId { get; set; } = "";
+    private IEnumerable<Claim>? userClaims
+    {
+        get
+        {
+            var auth = AuthState.Result;
+            if (auth.User.Identity.IsAuthenticated)
+            {
+                return auth.User.Claims.ToList();
+            }
+            return new List<Claim>();
+        }
+    }
+    private List<string> userRoles = new();
+
+    GetAllUsersResponse getAllUsersResponse = new();
+    CreateUserRequest createUserRequest = new();
+    CreateUserResponse createUserResponse = new();
+    DeleteUserRequest deleteUserRequest = new();
+    GetUserByIdResponse getUserByIdResponse = new();
+    UpdateUserRequest updateUserRequest = new();
+    IEnumerable<GetAllUsersResponse> users = new List<GetAllUsersResponse>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        logger.LogInformation("(Users)Component initialized");
+        await base.OnInitializedAsync();
+
+        NavigationManager.LocationChanged += LocationChanged;
+
+        try
+        {
+            string returnUrl = NavigationManager.Uri;
+            var user = AuthState.Result;
+
+            var response = await userApiClient.GetAllUsers();
+            if (response.Count > 0)
+            {
+                logger.LogInformation("Users fetching success.");
+                users = response;
+            }
+
+            users = response;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while fetching users.");
+            Error.ProcessException(ex);
+
+        }
+
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (users != UserList)
+        {
+            UserList = users;
+        }
+
+        StateHasChanged();
+    }
+
+    public async Task CreateUserDialog()
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Add New User" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<CreateUser>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "CreateUserRequest",  createUserRequest}
+               },
+               new DialogOptions()
+               {
+                   Width = "600px",
+                   Height = "400px",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+
+
+               });
+
+        RefreshData();
+        StateHasChanged();  
+
+    }
+
+    public async void ViewUserDialog(GetAllUsersResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"User Details" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<ViewUser>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllUsersResponse",  model},
+                   { "GetUserByIdResponse",  getUserByIdResponse},
+               },
+               new DialogOptions()
+                   {
+                       Width = "400px",
+                       Height = "250px",
+                       Resizable = false,
+                       Draggable = true,
+                       ShowClose = true,
+                       CloseDialogOnEsc = true,
+                       CloseDialogOnOverlayClick = true,
+
+                   });
+
+        StateHasChanged();
+    }
+
+    public async Task EditUserDialog(GetAllUsersResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Edit User" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<EditUser>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllUsersResponse",  model},
+                   { "UpdateUserRequest",  updateUserRequest},
+               },
+               new DialogOptions()
+                   {
+                       Width = "600px",
+                       Height = "350px",
+                       Resizable = false,
+                       Draggable = true,
+                       ShowClose = true,
+                       CloseDialogOnEsc = true,
+                       CloseDialogOnOverlayClick = true,
+
+                   });
+        RefreshData();
+        StateHasChanged();
+    }
+
+    public async Task DeleteUserDialog(GetAllUsersResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Delete User?" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<DeleteUser>(modalHeaderTitle,
+               new Dictionary<string, object>()
+                   {
+                   { "GetAllUsersResponse",  model},
+                   { "DeleteUserRequest",  deleteUserRequest},
+                   },
+               new DialogOptions()
+                   {
+                       ShowTitle = false,
+                       Width = "350px",
+                       Height = "100px",
+                       Resizable = false,
+                       Draggable = true,
+                       ShowClose = true,
+                       CloseDialogOnEsc = true,
+                       CloseDialogOnOverlayClick = true,
+
+                   });
+
+        RefreshData();
+        StateHasChanged();
+
+    }
+
+    private async Task<(IEnumerable<GetAllUsersResponse>, int)> FetchItems(DataRequest dataRequest)
+    {
+        var count = users.Count();
+        if (dataRequest.FilterColumnProperty != null && dataRequest.Filter != null)
+        {
+            var data = users.Where(q =>
+                (q.FirstName.ToLower().Contains(dataRequest.Filter) && nameof(q.FirstName) == dataRequest.FilterColumn) ||
+                (q.Email.ToLower().Contains(dataRequest.Filter) && nameof(q.Email) == dataRequest.FilterColumn)
+                ).ToList();
+            count = data.Count();
+            return (data, count);
+        }
+        if (dataRequest.SortColumnProperty != null)
+        {
+            if (dataRequest.Descending)
+                return (users.OrderByDescending(x => dataRequest.SortColumnProperty.GetValue(x)).Skip(dataRequest.Page * 20).Take(20).ToList(), count);
+            return (users.OrderBy(x => dataRequest.SortColumnProperty.GetValue(x)).Skip(dataRequest.Page * 20).Take(20).ToList(), count);
+        }
+        return (users.Skip(dataRequest.Page * 20).Take(20).ToList(), count);
+    }
+
+    private void LocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        string navigationMethod = e.IsNavigationIntercepted ? "HTML" : "code";
+        string location = e.Location;
+    }
+
+    protected void AlertStateHasChanged()
+    {
+        InvokeAsync(() => { });
+    }
+
+    public async void RefreshData()
+    {
+        try
+        {
+            users = await userApiClient.GetAllUsers();
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+        StateHasChanged();
+    }
+
+    void IDisposable.Dispose()
+    {
+        // Unsubscribe from the event when our component is disposed
+        NavigationManager.LocationChanged -= LocationChanged;
+    }
+}

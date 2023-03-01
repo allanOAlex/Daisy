@@ -1,0 +1,110 @@
+﻿@inject NavigationManager navigationManager
+@inherits LayoutComponentBase
+@inject IAuthApiClient authApiClient;
+@inject HttpClient Http
+@inject DialogService DialogService
+@implements IDisposable
+
+<RadzenDialog />
+<RadzenNotification />
+<RadzenContextMenu />
+<RadzenTooltip />
+<RadzenNotification />
+
+
+<div class="page" >
+    
+       
+    <AuthorizeView>
+        <Authorized>
+            <div class="sidebar">
+                <NavMenu />
+            </div>
+        </Authorized>
+    </AuthorizeView>
+    
+    
+    <main >
+        <nav class="navbar fixed-top" style="background-color:#424874; z-index:1; ">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">
+                    <img src="/img/carousel/logo-nav.svg" alt="" width="40" height="30"> <strong style="color:white; font-size:15px;">
+                        Tuomoke Pamoja!
+                    </strong>
+                </a>
+                <div>
+                    <LoginDisplay />
+                </div>
+            </div>
+        </nav>
+        
+        <br />
+        <br />
+       
+        <article class="content px-4 pt-2 mb-5 pb-3" >
+            <ErrorBoundary @ref="errorBoundary">
+                <ChildContent>
+                    @Body
+                </ChildContent>
+            </ErrorBoundary>
+            
+        </article>
+        <br />
+
+       
+        <SharedFooter />
+       
+    </main>
+</div>
+
+
+@code{
+
+    [CascadingParameter]
+    public Task<AuthenticationState>? AuthState { get; set; }
+
+    private ErrorBoundary? errorBoundary;
+
+    private IList<Claim> userClaim
+    {
+        get
+        {
+            var auth = AuthState.Result;
+            if (auth.User.Identity.IsAuthenticated)
+            {
+                return auth.User.Claims.ToList();
+            }
+            return new List<Claim>();
+        }
+    }
+
+    private bool collapseNavMenu = true;
+    private bool expandSubNav;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+    }
+
+    protected override void OnParametersSet()
+    {
+        errorBoundary?.Recover();
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    public void Dispose()
+    {
+        
+    }
+    
+}
+
+
+

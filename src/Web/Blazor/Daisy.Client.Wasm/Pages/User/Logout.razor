@@ -1,0 +1,134 @@
+﻿@page "/logout"
+@inject IAuthApiClient authApiClient
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+
+<RadzenTemplateForm TItem="LogoutRequest" Data="@model" class="m-2">
+    <div class="m-2">
+        <RadzenText TextStyle="TextStyle.Subtitle2" Text="Please confirm logout" Style="font-size:15px;" />
+    </div>
+    <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col">
+            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Light" Text="Logout" Icon="check_circle" Size="ButtonSize.Small" class="float-end m-1 rounded-pill" Style="text-transform:none;" Click=@(() => LogoutWithSignInManager(@model)) />
+            <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="Abort" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform:none;" class="float-end m-1 rounded-pill" Click=@Abort />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState>? AuthState { get; set; }
+
+    private List<Claim>? userClaims
+    {
+        get
+        {
+            var auth = AuthState.Result;
+            if (auth.User.Identity.IsAuthenticated)
+            {
+                return auth.User.Claims.ToList();
+            }
+            return new List<Claim>();
+        }
+    }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    public string? StringId { get; set; } = "";
+
+    [Parameter]
+    public LogoutRequest? LogoutRequest { get; set; }
+
+    [Parameter]
+    public GetUserClaimsResponse? GetUserClaimsResponse { get; set; }
+
+    LogoutRequest? model = new LogoutRequest();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        //await authApiClient.Logout();
+        //NavigationManager.NavigateTo("/");
+    }
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            if (userClaims.Count <= 0)
+            {
+                model = LogoutRequest;
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(userClaims?.FirstOrDefault(c => c.Type.Equals("nameid", StringComparison.OrdinalIgnoreCase))?.Value))
+                {
+                    StringId = userClaims?.FirstOrDefault(c => c.Type.Equals("nameid", StringComparison.OrdinalIgnoreCase))?.Value;
+                }
+                else
+                {
+                    StringId = userClaims?.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier, StringComparison.OrdinalIgnoreCase))?.Value;
+                }
+
+                Id = int.Parse(StringId);
+
+                model = LogoutRequest;
+                model.Id = int.Parse(StringId);
+                model.UserName = userClaims?.FirstOrDefault(c => c.Type.Equals("Username", StringComparison.OrdinalIgnoreCase))?.Value;
+
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error Setting Logout Params | {ex.Message}");
+        }
+        
+    }
+
+    void Abort()
+    {
+        DialogService.Close(model);
+    }
+
+
+    async void DoLogout()
+    {
+        try
+        {
+            await authApiClient.Logout();
+            NavigationManager.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error logging out - Please contact system admin | {ex.Message}");
+        }
+
+    }
+
+    async void LogoutWithSignInManager(LogoutRequest request)
+    {
+        try
+        {
+            var result = await authApiClient.LogoutWithSignInManager(request);
+            if (result.Successful == true)
+            {
+                await DialogService.Alert("Logout Successful", "Success!!", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+                DialogService.Close();
+                NavigationManager.NavigateTo("/");
+                
+
+            }
+        }
+        catch (Exception ex)
+        {
+           throw new Exception($"Error logging out - Please contact system admin | {ex.Message}");
+        }
+        
+    }
+
+}

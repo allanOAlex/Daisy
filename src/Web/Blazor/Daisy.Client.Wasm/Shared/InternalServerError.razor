@@ -1,0 +1,9 @@
+﻿@page "/500"
+
+<StatusCodeError ErrorMessage="@ErrorMessage" />
+
+@code {
+    
+    string ErrorMessage = $"Something went wrong. \nPlease contact system administrator.";
+
+}

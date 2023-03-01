@@ -1,0 +1,257 @@
+﻿@page "/events"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IConfiguration Config
+@inject IEventApiClient eventApiClient
+@inject ILogger<Users> logger;
+@attribute [Authorize]
+
+<PageTitle>Events</PageTitle>
+
+<br />
+<caption class="pt-0"><strong>Events</strong></caption>
+<BSCard Class="border-0">
+    <BSCard CardType="CardType.Body">
+        <BSRow Class="mb-1">
+            <BSCol>
+                <BSLabel>Title</BSLabel>
+                <BSInput InputType="InputType.Text" InputSize="Size.Medium" placeholder="" Value="@("")" id="eventTitleFilter" />
+            </BSCol>
+            <BSCol>
+                <BSLabel>Location</BSLabel>
+                <BSInput InputType="InputType.Text" InputSize="Size.Medium" placeholder="" Value="@("")" id="eventLocationFilter" />
+            </BSCol>
+            <BSCol>
+                <BSLabel>Date From</BSLabel>
+                <RadzenDatePicker Name="StartDate" TValue="DateOnly" ShowTime="false" Class="h-25" id="eventDateFromFilter" />
+            </BSCol>
+            <BSCol>
+                <BSLabel>Date To</BSLabel>
+                <RadzenDatePicker Name="StartDate" TValue="DateOnly" ShowTime="false" id="eventDateToFilter" />
+            </BSCol>
+        </BSRow>
+    </BSCard>
+</BSCard>
+
+<div class=" table">
+    <BSTable class="table table-sm table-condensed table-striped table-hover dt-responsive display nowrap caption-top" style="border: 1px solid grey;">
+        <BSTHead class="thead-dark position-sticky" style="background-color:#424874; color:#B5CBDE;font-weight:normal;">
+            <BSTR>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Start Date</th>
+                <th>Time</th>
+                <th>End Date</th>
+                <th>Location</th>
+                <th>Venue</th>
+                <th Class="wider-on-sm"><RadzenButton ButtonStyle="ButtonStyle.Secondary" ButtonType="ButtonType.Button" Icon="add_circle_outline" Shade="Shade.Light" Text="Add New" Size="ButtonSize.Small" class="float-end m-1" Style="text-transform: none;" Click=@CreateEventDialog /></th>
+            </BSTR>
+        </BSTHead>
+        <BSTBody>
+            @if (events.Count() > 0)
+            {
+                @foreach (var item in events)
+                {
+                    <BSTR style="font-size:15px">
+                        <BSTD>@item.Title</BSTD>
+                        <BSTD>@item.Description</BSTD>
+                        <BSTD>@item.StartDate.ToString("MM-dd-yyyy")</BSTD>
+                        <BSTD>@item.Time.ToString("T")</BSTD>
+                        <BSTD>@item.EndDate.ToString("MM-dd-yyyy")</BSTD>
+                        <BSTD>@item.Location</BSTD>
+                        <BSTD>@item.Venue</BSTD>
+                        <BSTD>
+                            <RadzenButton ButtonType="ButtonType.Button" Icon="delete" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Light" Variant="Variant.Flat" Size="ButtonSize.Small" Text="" class="float-end m-1" Style="text-transform: none;" Click="() => CancelEventDialog(item)" />
+                            <RadzenButton ButtonType="ButtonType.Button" Icon="edit" ButtonStyle="ButtonStyle.Dark" Variant="Variant.Flat" Size="ButtonSize.Small" Text="" class="float-end m-1" Style="text-transform: none;" Click="() => EditEventDialog(item)" />
+                            <RadzenButton ButtonType="ButtonType.Button" Icon="info" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" Text="" class="float-end m-1" Style="text-transform: none;" Click="() => ViewEventDialog(item)" />
+                        </BSTD>
+                    </BSTR>
+                }
+            }
+            else if (events.Count() <= 0)
+            {
+                <tr>
+                    <td colspan="100">
+                        <br>
+                        <p>
+                            <strong>
+                                No records to display
+                            </strong>
+                        </p>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                <tr>
+                    <td colspan="100">
+                        <br>
+                        <BSSpinner Color="BSColor.Primary" />
+                    </td>
+                </tr>
+            }
+        </BSTBody>
+    </BSTable>
+
+</div>
+<br />
+
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    RadzenDataGrid<GetAllEventsResponse>? eventsGrid;
+
+    CreateEventRequest createEventRequest = new();
+    GetEventByIdResponse getEventByIdResponse = new();
+    UpdateEventRequest updateEventRequest = new();
+    CancelEventRequest cancelEventRequest = new();
+    GetAllEventsResponse getAllEventsResponse = new();
+    IEnumerable<GetAllEventsResponse> events = new List<GetAllEventsResponse>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await eventApiClient.GetAllEvents();
+            if (response.Count > 0)
+            {
+                events = response;
+            }
+
+            events = response;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while fetching events.");
+            Error.ProcessException(ex);
+        }
+
+    }
+
+    public async Task CreateEventDialog()
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Add New Event" + "</label>" + "</b>";
+
+        var data = await DialogService.OpenAsync<AddEvent>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "CreateEventRequest",  createEventRequest}
+               },
+               new DialogOptions()
+               {
+                       Width = "900px",
+                       Height = "550px",
+                       Resizable = false,
+                       Draggable = true,
+                       ShowClose = true,
+                       CloseDialogOnEsc = true,
+                       CloseDialogOnOverlayClick = true,
+
+
+               });
+
+        RefreshData();
+        StateHasChanged();
+
+    }
+
+    public async void ViewEventDialog(GetAllEventsResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Event Details" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<ViewEvent>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllEventsResponse",  model},
+                   { "GetEventByIdResponse",  getEventByIdResponse},
+               },
+               new DialogOptions()
+               {
+                       Width = "800px",
+                       Height = "400px",
+                       Resizable = false,
+                       Draggable = true,
+                       ShowClose = true,
+                       CloseDialogOnEsc = true,
+                       CloseDialogOnOverlayClick = true,
+
+               });
+
+        StateHasChanged();
+    }
+
+    public async Task EditEventDialog(GetAllEventsResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Edit Event" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<EditEvent>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllEventsResponse",  model},
+                   { "UpdateEventRequest",  updateEventRequest},
+               },
+               new DialogOptions()
+               {
+                       Width = "800px",
+                       Height = "620px",
+                       Resizable = false,
+                       Draggable = true,
+                       ShowClose = true,
+                       CloseDialogOnEsc = true,
+                       CloseDialogOnOverlayClick = true,
+
+               });
+
+        RefreshData();
+        StateHasChanged();
+    }
+
+    public async Task CancelEventDialog(GetAllEventsResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Cancel Event?" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<CancelEvent>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllEventsResponse",  model},
+                   { "CancelEventRequest",  cancelEventRequest},
+               },
+               new DialogOptions()
+               {
+                       Width = "350px",
+                       Height = "220px",
+                       Resizable = false,
+                       Draggable = true,
+                       ShowClose = true,
+                       CloseDialogOnEsc = true,
+                       CloseDialogOnOverlayClick = true,
+
+               });
+
+        RefreshData();
+        StateHasChanged();
+    }
+
+    public async void RefreshData()
+    {
+        try
+        {
+            events = await eventApiClient.GetAllEvents();
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+        StateHasChanged();
+    }
+
+
+}

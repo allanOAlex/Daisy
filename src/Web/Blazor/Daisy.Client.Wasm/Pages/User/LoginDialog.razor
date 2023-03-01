@@ -1,0 +1,141 @@
+﻿@page "/logindialog"
+@inject IAuthApiClient authApiClient
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject IJSRuntime JS;
+
+
+<div class="d-flex m-1" style="width: 100%; flex-direction: column; overflow: hidden; ">
+    <RadzenTemplateForm TItem="LoginRequest" Data=@model Submit="@(() => HandleLogin(@model))" Action="/">
+        <div class="mb-3">
+            <strong><RadzenLabel Text="Username" Style="font-size:15px; color:#424874;" /></strong>
+            <RadzenTextBox Name="Username" @bind-Value="@model.UserName" Class="w-100 focusedInput" Style="height:30px;"  />
+            <RadzenRequiredValidator Text="Username is required" Component="Username" />
+            <RadzenRegexValidator Component="Username" Text="Value must contain 3 or more alphanumeric characters" Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
+        </div>
+        <div class="mb-3">
+            <strong><RadzenLabel Text="Password" Style="font-size:15px;color:#424874;" /></strong>
+            <RadzenPassword Name="Password" @bind-Value="@model.Password" Class="w-100" Style="height:30px;" AutoComplete="false" @oninput=@(args => OnChange(args.Value.ToString())) />
+            <RadzenRequiredValidator Text="Password is required" Component="Password" />
+            <RadzenRegexValidator Component="Password" Text="@passwordErrorMessage" Pattern="@passwordRegex" Popup=@popup Style="position: relative" />
+        </div>
+        <div class="mb-3">
+            <RadzenCheckBox @bind-Value=@checkBoxValue Name="CheckBox" TValue="bool" Style="font-size:15px;" Change=@(args => OnCheck(args)) />
+            <RadzenLabel Text="Remember Me" Component="CheckBox" Style="margin-left: 8px; vertical-align: middle;" />
+        </div>
+        <div class="mb-3">
+            <div class="row">
+                <div class="col">
+                    <RadzenButton ButtonType="ButtonType.Reset" ButtonStyle="ButtonStyle.Secondary" Shade="Shade.Light" Text="Cancel" Icon="highlight_off" Size="ButtonSize.Small" Class="float-end m-1 w-100" Style="text-transform: none;" Click="() => GoBack()" />
+                </div>
+                <div class="col">
+                    <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Shade="Shade.Dark" Text="Login" Icon="check_circle" Size="ButtonSize.Small" Class="float-end m-1 w-100" Style="text-transform: none;" />
+                </div>
+            </div>
+        </div>
+        <div class="mt-2 d-flex justify-content-center" style="margin: auto; width:80%; ">
+            <a class="nav-link active" aria-current="page" href="resetpass">Forgot Password?</a>
+        </div>
+    </RadzenTemplateForm>
+</div>
+@if (ShowErrors)
+{
+    <div class="alert alert-danger" role="alert">
+        <p>@Error</p>
+    </div>
+
+    <div class="d-flex justify-content-center">
+        <RadzenCard>
+            @Error
+        </RadzenCard>
+    </div>
+
+}
+
+@code {
+
+    string alphanumericRegex = @"^[a-zA-Z0-9 _@./#&+-]{3,}$";
+    string passwordRegex = @"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$";
+    string passwordErrorMessage = "\n" +
+        "Must have a minimum of 8 characters in length \n " +
+        "Must contain at least one uppercase English letter \n" +
+        "Must contain at least one lowercase English letter \n" +
+        "Must contain at least one digit \n" +
+        "Must contain at least one special character";
+
+
+    bool popup;
+    bool checkBoxValue;
+    private bool ShowErrors;
+    private string Error = "";
+    private IEnumerable<string>? Errors;
+
+
+    #region Methods
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        
+    }
+
+    [Parameter]
+    public LoginRequest? LoginRequest { get; set; }
+
+    LoginRequest model = new LoginRequest();
+
+
+    protected override void OnParametersSet()
+    {
+        model = LoginRequest;
+        model.UserName = LoginRequest.UserName;
+        model.Password = LoginRequest.Password;
+        model.RememberMe = LoginRequest.RememberMe;
+
+    }
+
+    public async void GoBack()
+    {
+        await JS.InvokeVoidAsync("GoBack");
+    }
+
+    void OnChange(string value)
+    {
+        model.Password = value;
+    }
+
+    void OnCheck(bool? value)
+    {
+        model.RememberMe = value;
+    }
+
+    private async Task HandleLogin(LoginRequest loginRequest)
+    {
+        ShowErrors = false;
+
+        var result = await authApiClient.Login(loginRequest);
+
+        if (!result.Successful)
+        {
+            ShowErrors = true;
+            Error = result.Message;
+        }
+        
+    }
+
+    void OnResetPassword(string value)
+    {
+        Console.WriteLine($"ResetPassword for user: {value}");
+    }
+
+
+
+
+    #endregion
+
+
+
+
+
+}

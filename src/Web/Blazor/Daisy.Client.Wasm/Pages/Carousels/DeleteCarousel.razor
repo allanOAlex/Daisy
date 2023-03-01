@@ -1,0 +1,113 @@
+﻿@page "/deletecarousel"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject ICarouselApiClient carouselApiClient
+@inject NavigationManager navigationManager
+@attribute [Authorize]
+
+<PageTitle>Delete Carousel</PageTitle>
+
+<RadzenTemplateForm TItem="DeleteCarouselRequest" Data="@model" class="m-2">
+    <div class="m-2">
+        <RadzenText TextStyle="TextStyle.Subtitle2" Text="Are you sure??" Style="font-size:15px;" />
+    </div>
+    <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col">
+            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Light" Text="Delete" Icon="check_circle" Size="ButtonSize.Small" class="float-end m-1 rounded-pill" Style="text-transform:none;" Click=@(() => Delete(Id)) />
+            <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="Abort" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform:none;" class="float-end m-1 rounded-pill" Click=@Abort />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public DeleteCarouselRequest? DeleteCarouselRequest { get; set; }
+
+    [Parameter]
+    public GetAllCarouselsResponse? GetAllCarouselsResponse { get; set; }
+
+    DeleteCarouselRequest? model = new DeleteCarouselRequest();
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            model = DeleteCarouselRequest;
+            model.Id = GetAllCarouselsResponse.Id;
+            Id = GetAllCarouselsResponse.Id;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+        
+    }
+
+    async void Delete(int Id)
+    {
+        try
+        {
+            var result = await carouselApiClient.Delete(Id);
+            if (!result.Successful)
+            {
+                await DialogService.Alert("Error Deleting Carousel", $"{DialogExtensions.failureHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+                
+            }
+            else
+            {
+                DialogService.Close();
+                await DialogService.Alert("Carousel Deleted Successfully", $"{DialogExtensions.successHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+
+    }
+
+    async void DoDelete(int Id, DeleteCarouselRequest request)
+    {
+        try
+        {
+            var result = await carouselApiClient.DeleteCarousel(Id, request);
+            if (result != null)
+            {
+                DialogService.Close();
+                await DialogService.Alert("Carousel Deleted Successfully", $"{DialogExtensions.successHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+
+            }
+            else
+            {
+                await DialogService.Alert("Error Deleting Carousel", $"{DialogExtensions.failureHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+        
+        
+    }
+
+    public async Task NavigateToUrl(string url, bool force)
+    {
+        navigationManager.NavigateTo(url, force);
+    }
+
+    void Abort()
+    {
+        DialogService.Close(model);
+    }
+
+
+}

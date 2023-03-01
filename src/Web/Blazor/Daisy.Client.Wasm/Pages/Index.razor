@@ -1,0 +1,81 @@
+﻿@page "/"
+@inject IAuthApiClient authApiClient;
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject NavigationManager navigationManager
+@implements IDisposable
+
+
+<PageTitle>Tuomoke</PageTitle>
+
+<section>
+    <br />
+    <IndexCarousel />
+</section>
+<br />
+<section style="background-color:#DCEAEF; background-repeat: no-repeat;background-size: auto; background-size:cover;">
+    <IndexPanel />
+</section>
+<br />
+<section style="background-color:#EEF1FF; background-repeat: no-repeat;background-size: auto; background-size:cover;">
+    <IndexReachUs />
+</section>
+<br />
+<section >
+    <IndexContacts />
+</section>
+<br />
+
+
+@code {
+
+    [CascadingParameter]
+    public Task<AuthenticationState>? AuthState { get; set; }
+
+    private IList<Claim> userClaim
+    {
+        get
+        {
+            var auth = AuthState.Result;
+            if (auth.User.Identity.IsAuthenticated)
+            {
+                return auth.User.Claims.ToList();
+            }
+            return new List<Claim>();
+        }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        string icon = "<i class=" + "bi bi-check-circle " + "style=" + "color:#18A558; " + ">";
+        var auth = AuthState.Result;
+        if (auth.User.Identity.IsAuthenticated)
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Success!",
+                    Detail = "",
+                    Duration = 4000,
+
+                });
+
+            StateHasChanged();
+
+        }
+
+
+    }
+
+    public void Dispose()
+    {
+        
+    }
+
+}
+
+
+

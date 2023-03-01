@@ -1,0 +1,214 @@
+﻿@page "/editappointment"
+@inject DialogService DialogService
+@inject IAppointmentApiClient appointmentApiClient
+@inject NavigationManager navigationManager
+@attribute [Authorize]
+
+<PageTitle>Edit Appointment</PageTitle>
+
+<RadzenTemplateForm TItem="UpdateAppointmentRequest" Data="@model" class="m-2">
+    <div class="row mb-2">
+        <div class="col-xs-12 col-sm-4 col-md-4">
+            <RadzenLabel Text="Salutation" Style="font-size:15px;" />
+            <InputSelect id="salutation" @bind-Value="SalutationId" class="form-control-sm form-select" style="height:30px;">
+                @foreach (var salutation in Salutations)
+                {
+                    <option value="@salutation.SalutationId">@salutation.Description</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-xs-12 col-sm-4 col-md-4">
+            <RadzenLabel Text="First Name" Style="font-size:15px;" />
+            <RadzenTextBox Name="FirstName" @bind-Value="@model.FirstName" Class="w-100" Style="height:30px;" />
+            <RadzenRequiredValidator Text="First Name is required" Component="FirstName" />
+        </div>
+        <div class="col-xs-12 col-sm-4 col-md-4">
+            <RadzenLabel Text="Middle Name" Style="font-size:15px;" />
+            <RadzenTextBox Name="MiddleName" @bind-Value="@model.MiddleName" Class="w-100" Style="height:30px;" />
+            <RadzenRequiredValidator Text="Middle Name is required" Component="MiddleName" />
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-xs-12 col-sm-4 col-md-4">
+            <RadzenLabel Text="Last Name" Style="font-size:15px;" />
+            <RadzenTextBox Name="LastName" @bind-Value="@model.LastName" Class="w-100" Style="height:30px;" />
+            <RadzenRequiredValidator Text="Last Name is required" Component="LastName" />
+        </div>
+        <div class="col-xs-12 col-sm-8 col-md-8">
+            <RadzenLabel Text="Email" Style="font-size:15px;" />
+            <RadzenTextBox Name="Email" @bind-Value="@model.Email" Class="w-100" Style="height:30px;" />
+            <RadzenRequiredValidator Text="Email is required" Component="Email" />
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-xs-12 col-sm-4 col-md-4">
+            <RadzenLabel Text="Phone" Style="font-size:15px;" />
+            <RadzenMask Mask="*** *** ****" CharacterPattern="[0-9]" Placeholder="000 000 0000" Name="Phone" @bind-Value=@model.ContactNumber Style="width: 100%;height:30px;" />
+            <RadzenRequiredValidator Text="Phone is required" Component="Phone" />
+        </div>
+        <div class="col-xs-12 col-sm-4 col-md-4">
+            <RadzenLabel Text="Date" Style="font-size:15px;" />
+            <RadzenDatePicker DateFormat="d" Name="Date" @bind-Value="@model.Date" ShowTime="false" DateRender=@DateRenderSpecial Change=@(args => GetSelectedDate(args)) />
+            <RadzenRequiredValidator Text="Date is required" Component="Date" />
+        </div>
+        <div class="col-xs-12 col-sm-4 col-md-4">
+            <RadzenLabel Text="Time" Style="font-size:15px;" />
+            <RadzenDatePicker Name="Time" TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="t" ShowSeconds="false" HourFormat="24" Class="w-60" Change=@(args => GetSelectedTime(args)) />
+            <RadzenRequiredValidator Text="Time is required" Component="Time" />
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-xs-12 col-sm-6 col-md-6">
+            <RadzenLabel Text="Prefered Location" Style="font-size:15px;" />
+            <RadzenTextArea Name="PreferedLocation" @bind-Value="@model.PreferedLocation" Class="w-100 h-50" />
+            <RadzenRequiredValidator Text="Location is required" Component="PreferedLocation" />
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-6">
+            <RadzenLabel Text="Remarks" Style="font-size:15px;" />
+            <RadzenTextArea Name="Remarks" @bind-Value="@model.Remarks" Class="w-100 h-50" />
+            <RadzenRequiredValidator Text="Remarks is required" Component="Remarks" />
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Shade="Shade.Dark" Text="Save" Icon="check_circle" Size="ButtonSize.Small" class="float-end m-1 rounded-pill" Style="text-transform: none;" Click=@(() => UpdateAppointment(@model.Id, @model)) />
+            <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="Cancel" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform: none;" class="float-end m-1 rounded-pill" Click=@OnCancel />
+            <RadzenButton ButtonType="ButtonType.Reset" ButtonStyle="ButtonStyle.Light" Text="Reset" Icon="refresh" Size="ButtonSize.Small" class=" m-1 rounded-pill" Style="text-transform: none;" />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@if (!string.IsNullOrEmpty(validationMessage))
+{
+    <div class="alert alert-danger">@validationMessage</div>
+}
+
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public EventCallback<DateTime> TimeValueChanged { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public UpdateAppointmentRequest? UpdateAppointmentRequest { get; set; }
+
+    [Parameter]
+    public GetAllAppointmentsResponse? GetAllAppointmentsResponse { get; set; }
+
+    UpdateAppointmentRequest? model = new UpdateAppointmentRequest();
+    IEnumerable<DateTime> today = new DateTime[] { DateTime.Today.AddDays(0) };
+    List<SalutationDto> Salutations = new()
+    {
+        new SalutationDto{SalutationId = 1, Description = "Mr"},
+        new SalutationDto{SalutationId = 2, Description = "Mrs"},
+        new SalutationDto{SalutationId = 3, Description = "Other"}
+    };
+
+    public string SalutationId { get; set; } = "";
+    private string validationMessage;
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            Id = GetAllAppointmentsResponse.Id;
+            model = UpdateAppointmentRequest;
+            model.Id = GetAllAppointmentsResponse.Id;
+            model.Salutation = GetAllAppointmentsResponse.Salutation;
+            model.FirstName = GetAllAppointmentsResponse.FirstName;
+            model.LastName = GetAllAppointmentsResponse.LastName;
+            model.ContactNumber = GetAllAppointmentsResponse.ContactNumber;
+            model.Email = GetAllAppointmentsResponse.Email;
+            model.Date = GetAllAppointmentsResponse.Date;
+            model.Time = GetAllAppointmentsResponse.Time;
+            model.Remarks = GetAllAppointmentsResponse.Remarks;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+
+    }
+
+    async void UpdateAppointment(int Id, UpdateAppointmentRequest request)
+    {
+        try
+        {
+            if (!ValidateSalutation())
+            {
+                return;
+            }
+            request.Salutation = int.Parse(SalutationId);
+            var result = await appointmentApiClient.UpdateAppointment(Id, request);
+            if (!result.Successful)
+            {
+                await DialogService.Alert("Could not update record.", "Failed!!", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+            else
+            {
+                
+                DialogService.Close(request);
+                await DialogService.Alert("Appointment Successfully Updated", "Success!!", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+        
+        
+    }
+
+    void DateRenderSpecial(DateRenderEventArgs args)
+    {
+        if (today.Contains(args.Date))
+        {
+            args.Attributes.Add("style", "background-color: #ff6d41; border-color: white;");
+        }
+
+    }
+
+    void GetSelectedTime(DateTime? dateTime)
+    {
+        model.Time = (DateTime)dateTime.Value;
+        TimeValueChanged.InvokeAsync(model.Time);
+    }
+
+    void GetSelectedDate(DateTime? dateTime)
+    {
+        model.Date = (DateTime)dateTime.Value;
+        TimeValueChanged.InvokeAsync(model.Date);
+    }
+
+    private bool ValidateSalutation()
+    {
+        if (string.IsNullOrEmpty(SalutationId))
+        {
+            validationMessage = "Please select a gender";
+            return false;
+        }
+        else
+        {
+            validationMessage = "";
+            return true;
+        }
+    }
+
+    public async Task NavigateToUrl(string url, bool force)
+    {
+        navigationManager.NavigateTo(url, force);
+    }
+
+    void OnCancel()
+    {
+        DialogService.Close(model);
+    }
+
+}

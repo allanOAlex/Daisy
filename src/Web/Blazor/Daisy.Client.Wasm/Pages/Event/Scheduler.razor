@@ -1,0 +1,166 @@
+﻿@page "/scheduler"
+@inject DialogService DialogService
+@inject HttpClient Http
+@inject IEventApiClient eventApiClient
+@attribute [Authorize]
+
+
+<br />
+<br />
+<div class="m-1">
+    <RadzenScheduler @ref=@scheduler
+                     SelectedIndex="2"
+                     Data="@scheduledEvents"
+                     TItem="SchedulerEventDto"
+                     StartProperty="StartDate"
+                     EndProperty="EndDate"
+                     TextProperty="Title"
+                     SlotRender=@OnSlotRender
+                     SlotSelect=@OnSlotSelect
+                     AppointmentRender=@OnAppointmentRender
+                     AppointmentSelect=@OnAppointmentSelect>
+
+        <RadzenDayView />
+        <RadzenWeekView />
+        <RadzenMonthView />
+
+    </RadzenScheduler>
+</div>
+
+
+
+
+@code {
+
+    SchedulerEventDto[] data = new SchedulerEventDto[]
+    {
+       new SchedulerEventDto
+       {
+         //Title = "Test Event",
+         //Description = "Test Event Description",
+         //StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+         //StartTime = TimeOnly.FromTimeSpan(TimeOnly.Parse("10:00 AM").ToTimeSpan()),
+         //EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+         //EndTime = TimeOnly.FromTimeSpan(TimeOnly.Parse("12:00 PM").ToTimeSpan())
+
+       },
+
+    };
+
+    RadzenScheduler<SchedulerEventDto>? scheduler;
+    Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
+
+    CreateEventRequest createEventRequest = new();
+    UpdateEventRequest updateEventRequest = new();
+    GetAllEventsResponse getAllEventsResponse = new();
+
+    IList<GetAllEventsResponse> eventsList = new List<GetAllEventsResponse>();
+    IList<SchedulerEventDto> scheduledEvents = new List<SchedulerEventDto>
+    {
+        new SchedulerEventDto
+        {
+            Title = "", Description = "",
+            StartDate = DateTime.Today.AddDays(-2).Date,
+            EndDate = DateTime.Today.AddDays(-2).Date,
+        },
+        new SchedulerEventDto
+        {
+            Title = "Day off", Description = "Day off",
+            StartDate = DateTime.Today.AddDays(-11).Date,
+            EndDate = DateTime.Today.AddDays(-10).Date,
+        },
+        new SchedulerEventDto
+        {
+            Title = "Work from home", Description = "Work from home",
+            StartDate = DateTime.Today.AddDays(-10).Date,
+            EndDate = DateTime.Today.AddDays(-8).Date,
+        },
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            var response = await eventApiClient.GetAllEvents();
+            if (response.Count > 0)
+            {
+                eventsList = response;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+
+    }
+
+    void OnSlotRender(SchedulerSlotRenderEventArgs args)
+    {
+        // Highlight today in month view
+        if (args.View.Text == "Month" && args.Start.Date == DateTime.Today)
+        {
+            args.Attributes["style"] = "background: #A6B1E1;";
+        }
+
+        // Highlight working hours (9-18)
+        if ((args.View.Text == "Week" || args.View.Text == "Day") && args.Start.Hour > 8 && args.Start.Hour < 19)
+        {
+            args.Attributes["style"] = "background: #DCD6F7;";
+        }
+    }
+
+    async Task OnSlotSelect(SchedulerSlotSelectEventArgs args)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:whitesmoke; background-color: #26428b !important; margin-top:3px;" + ">" + $"Add New Event" + "</label>" + "</b>";
+
+        var data = await DialogService.OpenAsync<AddEvent>(modalHeaderTitle,
+            new Dictionary<string, object>
+            {
+                { "UpdateEventRequest",  updateEventRequest}
+
+            },
+            new DialogOptions()
+            {
+                    Width = "600px",
+                    Height = "550px",
+                    Resizable = true,
+                    Draggable = true,
+                    ShowClose = true,
+                    CloseDialogOnEsc = true,
+                    CloseDialogOnOverlayClick = true,
+
+            });
+
+        if (data != null)
+        {
+            scheduledEvents.Add(data);
+
+            // Either call the Reload method or reassign the Data property of the Scheduler
+            await scheduler.Reload();
+        }
+    }
+
+    async Task OnAppointmentSelect(SchedulerAppointmentSelectEventArgs<SchedulerEventDto> args)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:whitesmoke; background-color: #26428b !important; margin-top:3px;" + ">" + $"Edit Event" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<EditEvent>(modalHeaderTitle, new Dictionary<string, object>
+        {
+            { "EventForEdit", args.Data },
+
+        });
+
+        await scheduler.Reload();
+    }
+
+    void OnAppointmentRender(SchedulerAppointmentRenderEventArgs<SchedulerEventDto> args)
+    {
+        // Never call StateHasChanged in AppointmentRender - would lead to infinite loop
+
+        if (args.Data.Title == "Birthday")
+        {
+            args.Attributes["style"] = "background: #C62A88";
+        }
+    }
+}

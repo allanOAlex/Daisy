@@ -1,0 +1,40 @@
+﻿@inject NavigationManager NavigationManager
+
+<Error>
+    <CascadingAuthenticationState>
+        <Router AppAssembly="@typeof(App).Assembly">
+            <Found Context="routeData">
+                <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                    <Authorizing>
+                        <text>Please wait ...</text>
+                        <span><RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" /></span>
+                    </Authorizing>
+                    <NotAuthorized>
+                        @if (@context.User.Identity.IsAuthenticated)
+                        {
+                            <RedirectToAccessDenied />
+                        }
+                        else
+                        {
+                            <RedirectToLogin />
+                        }
+
+                    </NotAuthorized>
+                </AuthorizeRouteView>
+                <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+            </Found>
+            <NotFound>
+                <PageTitle>Not found</PageTitle>
+                <LayoutView Layout="@typeof(MainLayout)">
+                    <AccessDenied ErrorMessage="Sorry, we couldn't find anything at this address." />
+                </LayoutView>
+            </NotFound>
+        </Router>
+    </CascadingAuthenticationState>
+
+</Error>
+
+@code {
+
+    
+}

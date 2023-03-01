@@ -1,0 +1,102 @@
+﻿@page "/viewuser"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject IEventApiClient eventApiClient
+@inject NavigationManager navigationManager
+@attribute [Authorize]
+@inject ILogger<Users> logger;
+
+    <PageTitle>User Details</PageTitle>
+
+<div class="row">
+    <div class="d-flex justify-content-between">
+        
+        <div class="col">
+            <div class="ms-2">
+                <div class="row mb-3">
+                    <div class="col-xs-12 col-sm-4 col-md-4 mb-2">
+                        <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>First Name</strong></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.FirstName)</strong></RadzenText>
+                    </div>
+                    <div class="col-xs-12 col-sm-4 col-md-4">
+                        <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Last Name</strong></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.LastName)</strong></RadzenText>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-xs-12 col-sm-8 col-md-8">
+                        <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Start Email</strong></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="mb-0">
+                            <strong>@(model.Email)</strong>
+                        </RadzenText>
+                    </div>
+                    <div class="col-xs-12 col-sm-4 col-md-4">
+                        <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Phone</strong></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="mb-0">
+                            <strong>@(model.Phone)</strong>
+                        </RadzenText>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public string Image { get; set; } = "";
+
+    [Parameter]
+    public GetAllUsersResponse? GetAllUsersResponse { get; set; }
+
+    [Parameter]
+    public GetUserByIdResponse? GetUserByIdResponse { get; set; }
+
+    GetUserByIdResponse? model = new GetUserByIdResponse();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        logger.LogInformation($"(View User)Component Initalized.");
+    }
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            model = GetUserByIdResponse;
+
+            model.Id = GetAllUsersResponse.Id;
+            model.FirstName = GetAllUsersResponse.FirstName;
+            model.LastName = GetAllUsersResponse.LastName;
+            model.Email = GetAllUsersResponse.Email;
+            model.Phone = GetAllUsersResponse.Phone;
+            model.Successful = GetAllUsersResponse.Successful;
+            model.Message = GetAllUsersResponse.Message;
+        }
+        catch (Exception ex)
+        {
+            logger.LogInformation($"(View User)Exception");
+            logger.LogError(ex, $"(OnParameterSet)Operation failed.");
+            Close();
+            Error.ProcessException(ex);
+        }
+        
+    }
+
+    void Close()
+    {
+        DialogService.Close(model);
+    }
+
+}

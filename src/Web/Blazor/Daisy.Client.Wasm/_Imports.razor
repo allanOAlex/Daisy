@@ -1,0 +1,74 @@
+﻿@using System.Net
+@using System.Net.Http
+@using System.Net.Http.Json
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Http
+@using System.Security.Claims
+
+
+
+@using Daisy.Client.Wasm
+@using Daisy.Client.Wasm.ChatGPT
+@using Daisy.Client.Wasm.ChatGPT.Pages
+@using Daisy.Client.Wasm.Components
+@using Daisy.Client.Wasm.Pages
+@using Daisy.Client.Wasm.Pages.Appointments
+@using Daisy.Client.Wasm.Pages.Carousels
+@using Daisy.Client.Wasm.Pages.Event
+@using Daisy.Client.Wasm.Pages.Main
+@using Daisy.Client.Wasm.Pages.Roles
+@using Daisy.Client.Wasm.Pages.User
+
+@using Daisy.Client.Wasm.Shared
+@using Daisy.Client.Wasm.Extensions
+@using Daisy.Client.Wasm.Handlers
+@using Daisy.Client.Wasm.Handlers.AuthHandlers
+@using Daisy.Client.Wasm.Helpers
+@using Daisy.Client.Wasm.ApiClients
+@using Daisy.Client.Wasm.ApiClients.Carousel
+@using Daisy.Client.Wasm.ApiClients.Appointments
+@using Daisy.Client.Wasm.ApiClients.Event
+@using Daisy.Client.Wasm.ApiClients.User
+@using Daisy.Client.Wasm.ApiClients.Auth
+@using Daisy.Client.Wasm.ApiClients.Role
+@using Daisy.Client.Wasm.AuthProviders
+
+@using Daisy.Shared.Dtos
+@using Daisy.Shared.Configs
+@using Daisy.Shared.Requests.Carousels
+@using Daisy.Shared.Requests.Appointments
+@using Daisy.Shared.Requests.Email
+@using Daisy.Shared.Requests.Event
+@using Daisy.Shared.Requests.User
+@using Daisy.Shared.Requests.Role
+@using Daisy.Shared.Responses.Carousels
+@using Daisy.Shared.Responses.Appointments
+@using Daisy.Shared.Responses.Email
+@using Daisy.Shared.Responses.Event
+@using Daisy.Shared.Responses.User
+@using Daisy.Shared.Responses.Role
+@using Daisy.Shared.Exceptions
+@using Daisy.Shared.Exceptions.Global
+@using Daisy.Shared.Extensions
+@using Daisy.Shared.Helpers
+
+@using Daisy.Application.Abstractions.Interfaces
+@using Daisy.Application.Abstractions.IRepositories
+@using Daisy.Application.Abstractions.IServices
+@using Daisy.Application.Abstractions.ISpecifications
+
+
+
+@using Radzen
+@using Radzen.Blazor
+
+@using BlazorStrap

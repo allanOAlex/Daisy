@@ -1,0 +1,211 @@
+﻿@page "/editcarousel"
+@inject DialogService DialogService
+@inject ICarouselApiClient carouselApiClient
+@inject NavigationManager navigationManager
+@attribute [Authorize]
+
+<PageTitle>Edit Carousel</PageTitle>
+
+<div class="row">
+    <div class="d-flex justify-content-between">
+        <div class="col-4">
+            <div class="me-1 hidden-scroll" style=" justify-content:space-between; overflow-y: scroll;">
+                <RadzenImage Path="@Image" style="max-width:300px; height:250px;" />
+            </div>
+        </div>
+        <div class="col">
+            <RadzenTemplateForm TItem="UpdateCarouselRequest" Data="@model" class="ms-4 hidden-scroll" style="overflow-y: scroll;">
+                <div class="row mb-2">
+                    <div class="col">
+                        <RadzenLabel Text="Image Name" Style="font-size:15px;" />
+                        <RadzenTextBox Name="ImageName" @bind-Value="@chosenFileName" Class="w-100" Style="height:30px;" />
+                        <div class="input-group mt-1">
+                            <div class="custom-file">
+                                <InputFile class="custom-file-input" OnChange="OnChange" accept="image/png, image/jpeg, image/gif" id="inputFile" />
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="row mb-2">
+                    <div class="col-5">
+                        <RadzenLabel Text="Label" Style="font-size:15px;" />
+                        <RadzenTextBox Name="Label" @bind-Value="@model.Label" Class="w-100" />
+                        <RadzenRequiredValidator Text="Label is required" Component="Label" />
+                    </div>
+                    <div class="col">
+                        <RadzenLabel Text="Paragraph" Style="font-size:15px;" />
+                        <RadzenTextArea Name="Paragraph" @bind-Value="@model.Paragraph" Class="w-100 h-50" />
+                        <RadzenRequiredValidator Text="Paragraph is required" Component="Paragraph" />
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col">
+                        <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Shade="Shade.Dark" Text="Save" Icon="check_circle" Size="ButtonSize.Small" class="float-end m-1 rounded-pill" Style="text-transform: none;" Click=@(() => UpdateCarousel(@model.Id, @model)) />
+                        <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Text="Cancel" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform: none;" class="float-end m-1 rounded-pill" Click=@OnCancel />
+                        <RadzenButton ButtonType="ButtonType.Reset" ButtonStyle="ButtonStyle.Light" Text="Reset" Icon="refresh" Size="ButtonSize.Small" class=" m-1 rounded-pill" Style="text-transform: none;" />
+
+                    </div>
+                </div>
+            </RadzenTemplateForm>
+        </div>
+
+    </div>
+
+</div>
+
+
+@code {
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public string Image { get; set; } = "";
+
+    [Parameter]
+    public string UpdateImage { get; set; } = "";
+
+    [Parameter]
+    public byte[]? UpdateImageData { get; set; } 
+
+    [Parameter]
+    public string UpdateImageType { get; set; } = "";
+
+    string chosenFileName = string.Empty;
+
+    [Parameter]
+    public UpdateCarouselRequest? UpdateCarouselRequest { get; set; }
+
+    [Parameter]
+    public GetAllCarouselsResponse? GetAllCarouselsResponse { get; set; }
+
+    UpdateCarouselRequest? model = new UpdateCarouselRequest();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        InitializeState();
+    }
+
+    private void InitializeState()
+    {
+        try
+        {
+            Id = GetAllCarouselsResponse.Id;
+            Image = $"data:{GetAllCarouselsResponse.ImageType};base64,{Convert.ToBase64String(GetAllCarouselsResponse.ImageData)}";
+
+            model = UpdateCarouselRequest;
+            model.Id = GetAllCarouselsResponse.Id;
+            model.Image = GetAllCarouselsResponse.Image;
+            model.Label = GetAllCarouselsResponse.Label;
+            model.Paragraph = GetAllCarouselsResponse.Paragraph;
+
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+    }
+
+    protected override async void OnParametersSet()
+    {
+        try
+        {
+            GetCarouselByIdRequest request = new();
+            request.Id = GetAllCarouselsResponse.Id;
+            var response = await carouselApiClient.GetById(request);
+
+            GetAllCarouselsResponse.Image = response.Image;
+            GetAllCarouselsResponse.ImageType = response.ImageType;
+            GetAllCarouselsResponse.ImageData = response.ImageData;
+
+            Id = response.Id;
+            Image = $"data:{GetAllCarouselsResponse.ImageType};base64,{Convert.ToBase64String(GetAllCarouselsResponse.ImageData)}";
+
+            model = UpdateCarouselRequest;
+            model.Id = GetAllCarouselsResponse.Id;
+            model.Image = GetAllCarouselsResponse.Image;
+            model.ImageType = GetAllCarouselsResponse.ImageType;
+            model.ImageData = GetAllCarouselsResponse.ImageData;
+            model.Label = GetAllCarouselsResponse.Label;
+            model.Paragraph = GetAllCarouselsResponse.Paragraph;
+
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+    }
+
+    async Task OnChange(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var files = e.GetMultipleFiles(); // get the files selected by the users
+            foreach (var file in files)
+            {
+                chosenFileName = file.Name;
+                var resizedFile = await file.RequestImageFileAsync(file.ContentType, 640, 480); // resize the image file
+                var buf = new byte[resizedFile.Size]; // allocate a buffer to fill with the file's data
+                using (var stream = resizedFile.OpenReadStream())
+                {
+                    await stream.ReadAsync(buf); // copy the stream to the buffer
+                }
+
+                model.Label = file.Name;
+                model.ImageData = buf;
+                model.Image = Convert.ToBase64String(buf);
+                model.ImageType = file.ContentType;
+
+                Image = $"data:{model.ImageType};base64,{Convert.ToBase64String(model.ImageData)}";
+
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+    }
+
+    async void UpdateCarousel(int Id, UpdateCarouselRequest request)
+    {
+        try
+        {
+            var result = await carouselApiClient.UpdateCarousel(Id, request);
+            if (!result.Successful)
+            {
+                await DialogService.Alert("Error updating Carousel.", $"{DialogExtensions.failureHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+            else
+            {
+                DialogService.Close();
+                await DialogService.Alert("Carousel Successfully Updated", $"{DialogExtensions.successHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+
+    }
+
+    public async Task NavigateToUrl(string url, bool force)
+    {
+        navigationManager.NavigateTo(url, force);
+    }
+
+    void OnCancel()
+    {
+        DialogService.Close(model);
+    }
+
+
+    
+}

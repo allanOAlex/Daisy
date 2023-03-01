@@ -1,0 +1,10 @@
+﻿@page "/404"
+
+
+<StatusCodeError ErrorMessage="@ErrorMessage" />
+
+@code {
+
+    string ErrorMessage = $"Sorry, we couldn't find anything at this address. \nPlease contact system administrator.";
+
+}

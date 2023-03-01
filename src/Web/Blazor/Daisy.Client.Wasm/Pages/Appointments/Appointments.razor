@@ -1,0 +1,267 @@
+﻿@page "/appointments"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IAppointmentApiClient appointmentApiClient
+@inject ILogger<Appointments> logger;
+@attribute [Authorize]
+
+<PageTitle>Appointments</PageTitle>
+
+<br />
+<div class="table-responsive">
+    <BSTable class="table table-sm table-condensed table-striped table-hover dt-responsive display nowrap caption-top" style="border: 1px solid grey;">
+        <caption class="pt-0"><strong>Appointments</strong></caption>
+        <BSTHead class="thead-dark position-sticky" style="background-color:#424874; color:#B5CBDE;font-weight:normal;">
+            <BSTR>
+                <th>Complete</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Remarks</th>
+                <th>Location</th>
+                <th><RadzenButton ButtonStyle="ButtonStyle.Secondary" ButtonType="ButtonType.Button" Shade="Shade.Light" Icon="add_circle_outline" Text="Add New" Size="ButtonSize.Small" class="float-end m-1" Style="text-transform: none;" Click=@CreateAppointmentDialog /></th>
+            </BSTR>
+        </BSTHead>
+        <BSTBody>
+            @if (appointmentList.Count() > 0)
+            {
+                @foreach (var item in appointmentList)
+                {
+                    <BSTR style="font-size:15px">
+                        <BSTD><RadzenButton ButtonType="ButtonType.Button" Icon="check_circle" ButtonStyle="ButtonStyle.Success" Shade="Shade.Light" Variant="Variant.Flat" Size="ButtonSize.Small" Text="Complete" class=" m-1" Style="text-transform: none;" Click="() => CompleteAppointmentDialog(item)" /></BSTD>
+                        <BSTD>@item.FirstName</BSTD>
+                        <BSTD>@item.LastName</BSTD>
+                        <BSTD>@item.ContactNumber</BSTD>
+                        <BSTD>@item.Email</BSTD>
+                        <BSTD>@item.Date.ToString("MM-dd-yyyy")</BSTD>
+                        <BSTD>@item.Time.ToString("T")</BSTD>
+                        <BSTD>@item.Remarks</BSTD>
+                        <BSTD>@item.PreferedLocation</BSTD>
+                        <BSTD>
+                            <RadzenButton ButtonType="ButtonType.Button" Icon="delete" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Light" Variant="Variant.Flat" Size="ButtonSize.Small" Text="" class="float-end m-1" Style="text-transform: none;" Click="() => CancelAppointmentDialog(item)" />
+                            <RadzenButton ButtonType="ButtonType.Button" Icon="edit" ButtonStyle="ButtonStyle.Dark" Variant="Variant.Flat" Size="ButtonSize.Small" Text="" class="float-end m-1" Style="text-transform: none; " Click="() => EditAppointmentDialog(item)" />
+                            <RadzenButton ButtonType="ButtonType.Button" Icon="info" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" Text="" class="float-end m-1" Style="text-transform: none;" Click="() => ViewAppointmentDialog(item)" />
+                        </BSTD>
+                    </BSTR>
+                }
+            }
+            else if (appointmentList.Count() <= 0)
+            {
+                <tr>
+                    <td colspan="100">
+                        <br>
+                        <p>
+                            <strong>
+                                No records to display
+                            </strong>
+                        </p>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                <tr>
+                    <td colspan="100">
+                        <br>
+                        <BSSpinner Color="BSColor.Primary" />
+                    </td>
+                </tr>
+            }
+        </BSTBody>
+    </BSTable>
+
+</div>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState>? AuthState { get; set; }
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    CreateAppointmentRequest? createAppointmentRequest = new();
+    GetAppointmentByIdResponse getAppointmentByIdResponse = new();
+    UpdateAppointmentRequest updateAppointmentRequest = new();
+    CompleteAppointmentRequest completeAppointmentRequest = new();
+    CancelAppointmentRequest cancelAppointmentRequest = new();
+
+    IEnumerable<GetAllAppointmentsResponse>? appointmentList = new List<GetAllAppointmentsResponse>();
+    IList<CreateAppointmentRequest> appointmentsList = new List<CreateAppointmentRequest>();
+
+    public int UserId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        try
+        {
+            var userId = int.Parse(AuthState.Result.User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            UserId = userId;
+            var response = await appointmentApiClient.GetAllAppointments();
+            if (response.Count > 0)
+            {
+                logger.LogInformation("Appointments fetching success.");
+                appointmentList = response;
+            }
+
+            appointmentList = response;
+
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while fetching appointments.");
+            Error.ProcessException(ex);
+        }
+
+    }
+
+    public async Task CreateAppointmentDialog()
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Add New Appointment" + "</label>" + "</b>";
+        createAppointmentRequest.CreatedBy = UserId;
+        var data = await DialogService.OpenAsync<CreateAppointment>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "CreateAppointmentRequest",  createAppointmentRequest}
+               },
+               new DialogOptions()
+               {
+                   Width = "600px",
+                   Height = "400",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+               });
+
+        RefreshData();
+        StateHasChanged();
+    }
+
+    public void ViewAppointmentDialog(GetAllAppointmentsResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Appointment Details" + "</label>" + "</b>";
+
+        DialogService.OpenAsync<ViewAppointment>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllAppointmentsResponse",  model},
+                   { "GetAppointmentByIdResponse",  getAppointmentByIdResponse},
+               },
+               new DialogOptions()
+               {
+                   Width = "500px",
+                   Height = "330px",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+
+               });
+
+        StateHasChanged();
+    }
+
+    public async Task EditAppointmentDialog(GetAllAppointmentsResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Edit Appointment" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<EditAppointment>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllAppointmentsResponse",  model},
+                   { "UpdateAppointmentRequest",  updateAppointmentRequest},
+               },
+               new DialogOptions()
+               {
+                   Width = "600px",
+                   Height = "600px",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+
+               });
+
+        RefreshData();
+        StateHasChanged();
+    }
+
+    public async Task CompleteAppointmentDialog(GetAllAppointmentsResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Mark Completed?" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<CompleteAppointment>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllAppointmentsResponse",  model},
+                   { "CompleteAppointmentRequest",  completeAppointmentRequest},
+               },
+               new DialogOptions()
+               {
+                   Width = "400px",
+                   Height = "300px",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+
+               });
+
+        RefreshData();
+        StateHasChanged();
+
+    }
+
+    public async Task CancelAppointmentDialog(GetAllAppointmentsResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Cancel Appointment?" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<DeleteAppointment>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllAppointmentsResponse",  model},
+                   { "CancelAppointmentRequest",  cancelAppointmentRequest},
+               },
+               new DialogOptions()
+               {
+                   Width = "400px",
+                   Height = "220px",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+
+               });
+
+        RefreshData();
+        StateHasChanged();
+
+    }
+
+    public async void RefreshData()
+    {
+        try
+        {
+            appointmentList = await appointmentApiClient.GetAllAppointments();
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+        StateHasChanged();
+    }
+
+
+}

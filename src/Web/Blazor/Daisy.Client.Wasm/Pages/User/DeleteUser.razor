@@ -1,0 +1,94 @@
+﻿@page "/deleteuser"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject IUserApiClient userApiClient
+@inject NavigationManager navigationManager
+@inject ILogger<CreateUser> logger;
+@attribute [Authorize]
+
+<PageTitle>Delete User</PageTitle>
+
+<RadzenTemplateForm TItem="DeleteUserRequest" Data="@model" class="m-2">
+    <div class="mt-2 mb-2">
+        <RadzenText TextStyle="TextStyle.Subtitle2" Text="Pleae confirm delete" Style="font-size:15px;" />
+    </div>
+    <div class="row">
+        
+        <div class="col mb-0 mt-2">
+            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Light" Text="Delete" Icon="delete" Size="ButtonSize.Small" class="float-end m-1 rounded-pill" Click=@(() => Delete(Id, @model)) />
+            <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="Abort" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform:none;" class="float-end m-1 rounded-pill" Click=@Abort />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public GetAllUsersResponse? GetAllUsersResponse { get; set; }
+
+    [Parameter]
+    public DeleteUserRequest? DeleteUserRequest { get; set; }
+
+    DeleteUserRequest? model = new DeleteUserRequest();
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            Id = GetAllUsersResponse.Id;
+
+            model = DeleteUserRequest;
+            model.Id = GetAllUsersResponse.Id;
+            model.IsActive = GetAllUsersResponse.IsActive;
+        }
+        catch (Exception ex)
+        {
+
+            Error.ProcessException(ex);
+        }
+        
+        
+    }
+
+    void Abort()
+    {
+        DialogService.Close(model);
+    }
+
+    async void Delete(int Id, DeleteUserRequest request)
+    {
+        try
+        {
+            var result = await userApiClient.DeleteUser(Id, request);
+            if (result.Successful == true)
+            {
+                logger.LogInformation($"Deleted user successfully.");
+                DialogService.Close();
+                await DialogService.Alert("Event Cancelled Successfully", "Success!!", new AlertOptions() { OkButtonText = "Ok",    CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+
+            }
+            else
+            {
+                logger.LogError($"Delete user failed.");
+                await DialogService.Alert($"Error deleting user", $"{DialogExtensions.failureHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+        
+
+    }
+
+    public async Task NavigateToUrl(string url)
+    {
+        navigationManager.NavigateTo(url);
+    }
+}

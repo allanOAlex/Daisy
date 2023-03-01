@@ -1,0 +1,219 @@
+﻿@page "/contactus"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject IAppointmentApiClient appointmentApiClient
+@inject NavigationManager navigationManager
+
+
+<BSCard Class="m-1 hidden-scroll" >
+    <BSCard CardType="CardType.Header" style="background-color:#26428b;  color:whitesmoke">Talk to Us</BSCard>
+    <BSCard CardType="CardType.Body" style="display:flex; flex-direction:column; justify-content:space-between; max-height:400px;">
+        <div style="display:flex; flex-direction:column; justify-content:space-between; ">
+            <RadzenAccordion class="mb-1">
+                <Items>
+                    <RadzenAccordionItem Text="Book appointment" Icon="account_balance_wallet" style="background-color:#ECECEC; ">
+                        <RadzenTemplateForm TItem="CreateAppointmentRequest" Data="@createAppointmentRequest" class="m-2" >
+                            <div class="row">
+                                <div class="col-5">
+                                    <div class="form-group mb-3">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Salutation</RadzenText>
+                                        <InputSelect id="salutation" @bind-Value="SalutationId" @onchange="@OnSelect" class="form-control-sm form-select">
+                                            @foreach (var salutation in Salutations)
+                                            {
+                                                <option value="@salutation.SalutationId">@salutation.Description</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => createAppointmentRequest.Salutation)" />
+                                        <RadzenRequiredValidator Text="This field is required" Component="Salutation" />
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group mb-3">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">First Name</RadzenText>
+                                        <RadzenTextBox Name="FirstName" @bind-Value=@createAppointmentRequest.FirstName Class="w-100" />
+                                        <ValidationMessage For="@(() => createAppointmentRequest.FirstName)" />
+                                        <RadzenRequiredValidator Text="This field is required" Component="FirstName" Popup=@popup Style="position: absolute" />
+                                        <RadzenRegexValidator Component="ZIP" Text="Value must be alphanumeric" Pattern="^[a-zA-Z0-9]*$" Popup=@popup Style="position: absolute" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group mb-3">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Middle Name</RadzenText>
+                                        <RadzenTextBox Name="MiddleName" @bind-Value=@createAppointmentRequest.MiddleName Placeholder="(Optional)" Class="w-100" />
+                                        <ValidationMessage For="@(() => createAppointmentRequest.MiddleName)" />
+                                        <RadzenRegexValidator Component="ZIP" Text="Value must be alphanumeric" Pattern="^[a-zA-Z0-9]*$" Popup=@popup Style="position: absolute" />
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group mb-3">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Last Name</RadzenText>
+                                        <RadzenTextBox Name="LastName" @bind-Value=@createAppointmentRequest.LastName Class="w-100" />
+                                        <ValidationMessage For="@(() => createAppointmentRequest.LastName)" />
+                                        <RadzenRequiredValidator Text="This field is required" Component="LastName" Popup=@popup Style="position: absolute" />
+                                        <RadzenRegexValidator Component="ZIP" Text="Value must be alphanumeric" Pattern="^[a-zA-Z0-9]*$" Popup=@popup Style="position: absolute" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Contact Number</RadzenText>
+                                <RadzenMask Mask="*** ***-****" CharacterPattern="[0-9]" Placeholder="000 000-0000" Name="Phone" @bind-Value=@createAppointmentRequest.ContactNumber Style="width: 100%;" />
+                                <ValidationMessage For="@(() => createAppointmentRequest.ContactNumber)" />
+                                <RadzenRequiredValidator Text="This field is required" Component="ContactNumber" Popup=@popup Style="position: absolute" />
+                                <RadzenRegexValidator Component="ZIP" Text="Value must be 10 digits" Pattern="\d{10}" Popup=@popup Style="position: absolute" />
+                            </div>
+                            <div class="form-group mb-3">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Email</RadzenText>
+                                <RadzenTextBox Name="Email" @bind-Value=@createAppointmentRequest.Email Class="w-100" />
+                                <ValidationMessage For="@(() => createAppointmentRequest.Email)" />
+                                <RadzenRequiredValidator Text="This field is required" Component="Email" Popup=@popup Style="position: absolute" />
+                                <RadzenEmailValidator Component="Email" Text="Please provide a valid email address" Popup=@popup Style="position: absolute" />
+                                <RadzenRegexValidator Component="ZIP" Text="Please provide a valid email" Pattern=@emailRegex Popup=@popup Style="position: absolute" />
+                            </div>
+                            <div class="row">
+                                <div class="col-7">
+                                    <div class="form-group mb-3">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Date</RadzenText>
+                                        <RadzenDatePicker DateFormat="d" Name="Date" @bind-Value="@createAppointmentRequest.Date" ShowTime="false" DateRender=@DateRenderSpecial />
+                                        <ValidationMessage For="@(() => createAppointmentRequest.Date)" />
+                                        <RadzenRequiredValidator Text="This field is required" Component="Date" Popup=@popup Style="position: absolute" />
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group mb-3">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Time</RadzenText>
+                                        <RadzenDatePicker Name="Time" TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" ShowSeconds="false" HourFormat="24" Class="w-60" />
+                                        <ValidationMessage For="@(() => createAppointmentRequest.Time)" />
+                                        <RadzenRequiredValidator Text="This field is required" Component="Time" Popup=@popup Style="position: absolute" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Remarks</RadzenText>
+                                <RadzenTextArea Name="Remarks" @bind-Value="@createAppointmentRequest.Remarks" Class="w-100 h-50" />
+                                <ValidationMessage For="@(() => createAppointmentRequest.Remarks)" />
+                                <RadzenRequiredValidator Text="This field is required" Component="Remarks" Popup=@popup Style="position: absolute" />
+                                <RadzenRegexValidator Component="Remarks" Text="Value must contain 3 or more alphanumeric characters" Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
+                            </div>
+
+                            <RadzenButton ButtonType="ButtonType.Reset" ButtonStyle="ButtonStyle.Light" Text="Cancel" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform: none;" class="float-end m-1" Click=@RelaodPage />
+                            <RadzenButton ButtonType="ButtonType.Reset" Text="Reset" Icon="refresh" Size="ButtonSize.Small" Style="background-color:#444444;text-transform: none;" class="float-end m-1" Click=@RefreshAppoinmentForm />
+                            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" Shade="Shade.Dark" Icon="check_circle" Text="Submit" class="float-end m-1" Style="text-transform: none;" Click=@(() => BookAppointment(@createAppointmentRequest))></RadzenButton>
+                        </RadzenTemplateForm>
+                    </RadzenAccordionItem>
+
+                </Items>
+            </RadzenAccordion>
+            <RadzenAccordion class="mb-1">
+                <Items>
+                    <RadzenAccordionItem Text="Contact Us" Icon="account_balance_wallet" style="background-color:#ECECEC">
+                        <RadzenCard Style="display:flex; flex-direction:column; background-color:#ECECEC" Class="1">
+                            <div class="d-flex flex-row ">
+                                <div>
+                                    <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Call/ WhatsApp :</strong></RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>0724 267 819</strong></RadzenText>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-row ">
+                                <div>
+                                    <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Email :</strong></RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>daisy@tuomokepamoja.africa</strong></RadzenText>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-row ">
+                                <div>
+                                    <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Website :</strong></RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>www.tuomokepamoja.africa</strong></RadzenText>
+                                </div>
+                            </div>
+                        </RadzenCard>
+                    </RadzenAccordionItem>
+
+                </Items>
+            </RadzenAccordion>
+        </div>
+    </BSCard>
+</BSCard>
+
+
+@code {
+
+
+    [Parameter]
+    public int Id { get; set; }
+
+    string emailRegex = @"^\\S+@\\S+\\.\\S+$";
+
+    bool popup;
+    
+    string phoneRegex = @"/^\d$/";
+    string alphanumericRegex = @"^[a-zA-Z0-9 _@./#&+-]{3,}$";
+
+    public string SalutationId { get; set; } = "";
+    public string SalutationText { get; set; } = "";
+
+    SalutationDto salutationDto = new();
+    CreateAppointmentRequest? createAppointmentRequest = new();
+    List<SalutationDto> Salutations = new()
+    {
+        new SalutationDto{SalutationId = 1, Description = "Mr"},
+        new SalutationDto{SalutationId = 2, Description = "Mrs"},
+        new SalutationDto{SalutationId = 3, Description = "Other"}
+    };
+
+    IEnumerable<DateTime> dates = new DateTime[] { DateTime.Today.AddDays(-1), DateTime.Today.AddDays(1) };
+    IEnumerable<DateTime> today = new DateTime[] { DateTime.Today.AddDays(0) };
+
+    void DateRenderSpecial(DateRenderEventArgs args)
+    {
+        if (today.Contains(args.Date))
+        {
+            args.Attributes.Add("style", "background-color: #ff6d41; border-color: white;");
+        }
+
+    }
+
+    void OnSelect(ChangeEventArgs e)
+    {
+        SalutationText = e.Value.ToString();
+    }
+
+    public void RefreshAppoinmentForm()
+    {
+        createAppointmentRequest = new CreateAppointmentRequest();
+
+    }
+
+    public void RelaodPage()
+    {
+        navigationManager.NavigateTo("/", true);
+    }
+
+    async void BookAppointment(CreateAppointmentRequest request)
+    {
+        try
+        {
+            request.Salutation = int.Parse(SalutationId);
+            var response = appointmentApiClient.CreateAppointment(request);
+            if (response != null)
+            {
+                RefreshAppoinmentForm();
+                DialogService.Close(request);
+                await DialogService.Alert("Appointment Created Successfully", $"{DialogExtensions.successHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+            else
+            {
+                await DialogService.Alert("Error creating appointment. Please contact system administrator.", $"{DialogExtensions.failureHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+
+            navigationManager.NavigateTo("/appointments", true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+            throw new Exception($"Error submitting appointment details | {ex.Message}");
+        }
+        
+    }
+}

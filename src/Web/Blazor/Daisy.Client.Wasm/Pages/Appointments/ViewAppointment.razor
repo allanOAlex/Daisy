@@ -1,0 +1,98 @@
+﻿@page "/appointment"
+@inject DialogService DialogService
+@attribute [Authorize]
+
+<PageTitle>Appointment Details</PageTitle>
+
+<RadzenTemplateForm TItem="GetAppointmentByIdResponse" Data="@model" class="m-2">
+    <div class="m-3">
+        <div class="row mb-2">
+            <div class="col-4">
+                <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>First Name</strong></RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.FirstName)</strong></RadzenText>
+            </div>
+            <div class="col">
+                <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Last Name</strong></RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.LastName)</strong></RadzenText>
+            </div>
+            <div class="col">
+                <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Phone</strong></RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.ContactNumber)</strong></RadzenText>
+            </div>
+        </div>
+        <div class="row mb-2">
+            <div class="col">
+                <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Email</strong></RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.Email)</strong></RadzenText>
+            </div>
+            <div class="col">
+                <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Date</strong></RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.Date.ToString("dddd, dd MMMM yyyy"))</strong>
+                </RadzenText>
+            </div>
+            <div class="col">
+                <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Time</strong></RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.Time.ToString("T"))</strong>
+                </RadzenText>
+            </div>
+        </div>
+        <div class="row mb-2">
+            <div class="col">
+                <RadzenText TextStyle="TextStyle.Subtitle1" class="mb-0"><strong>Remarks</strong></RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" class="mb-0"><strong>@(model.Remarks)</strong></RadzenText>
+            </div>
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public GetAppointmentByIdResponse? GetAppointmentByIdResponse { get; set; }
+
+    [Parameter]
+    public GetAllAppointmentsResponse? GetAllAppointmentsResponse { get; set; }
+
+
+    GetAppointmentByIdResponse? model = new GetAppointmentByIdResponse();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            model = GetAppointmentByIdResponse;
+            model.Id = GetAllAppointmentsResponse.Id;
+            model.FirstName = GetAllAppointmentsResponse.FirstName;
+            model.LastName = GetAllAppointmentsResponse.LastName;
+            model.ContactNumber = GetAllAppointmentsResponse.ContactNumber;
+            model.Email = GetAllAppointmentsResponse.Email;
+            model.Date = GetAllAppointmentsResponse.Date;
+            model.Time = GetAllAppointmentsResponse.Time;
+            model.PreferedLocation = GetAllAppointmentsResponse.PreferedLocation;
+            model.Remarks = GetAllAppointmentsResponse.Remarks;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+        
+        
+    }
+
+    void Close()
+    {
+        DialogService.Close(model);
+    }
+}

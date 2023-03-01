@@ -1,0 +1,123 @@
+﻿@page "/deleteappointment"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject IAppointmentApiClient appointmentApiClient
+@inject NavigationManager navigationManager
+@attribute [Authorize]
+
+<PageTitle>Delete Appointment</PageTitle>
+
+<RadzenTemplateForm TItem="CancelAppointmentRequest" Data="@model" class="m-2">
+    <div class="mt-2">
+        <RadzenText TextStyle="TextStyle.Subtitle2" Text="Are you sure??" Style="font-size:15px;" />
+        <br />
+    </div>
+    <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col">
+            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Light" Text="Cancel" Icon="check_circle" Size="ButtonSize.Small" class="float-end m-1 rounded-pill" Click=@(() => Cancel(Id)) />
+            <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="Abort" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform: none;" class="float-end m-1 rounded-pill" Click=@Abort />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public CancelAppointmentRequest? CancelAppointmentRequest { get; set; }
+
+    [Parameter]
+    public GetAllAppointmentsResponse? GetAllAppointmentsResponse { get; set; }
+
+    CancelAppointmentRequest? model = new CancelAppointmentRequest();
+
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            Id = GetAllAppointmentsResponse.Id;
+            model = CancelAppointmentRequest;
+            model.Id = GetAllAppointmentsResponse.Id;
+            model.Salutation = GetAllAppointmentsResponse.Salutation;
+            model.FirstName = GetAllAppointmentsResponse.FirstName;
+            model.MiddleName = GetAllAppointmentsResponse.MiddleName;
+            model.LastName = GetAllAppointmentsResponse.LastName;
+            model.ContactNumber = GetAllAppointmentsResponse.ContactNumber;
+            model.Email = GetAllAppointmentsResponse.Email;
+            model.Date = GetAllAppointmentsResponse.Date;
+            model.Time = GetAllAppointmentsResponse.Time;
+            model.PreferedLocation = GetAllAppointmentsResponse.PreferedLocation;
+            model.Remarks = GetAllAppointmentsResponse.Remarks;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+    }
+
+    async void Cancel(int Id)
+    {
+        try
+        {
+            var result = await appointmentApiClient.Cancel(Id);
+            if (!result.Successful)
+            {
+                await DialogService.Alert("Error Cancelling Appointment", $"{DialogExtensions.failureHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+            else
+            {
+                DialogService.Close();
+                await DialogService.Alert("Appointment Cancelled Successfully", $"{DialogExtensions.successHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+        
+
+    }
+
+    async void CancelAppointment(int Id, CancelAppointmentRequest request)
+    {
+        try
+        {
+            var result = await appointmentApiClient.CancelAppointment(Id, request);
+            if (!result.Successful)
+            {
+                await DialogService.Alert("Error Cancelling Appointment", $"{DialogExtensions.failureHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+            else
+            {
+                DialogService.Close();
+                await DialogService.Alert("Appointment Cancelled Successfully", $"{DialogExtensions.successHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+
+    }
+
+    public async Task NavigateToUrl(string url, bool force)
+    {
+        navigationManager.NavigateTo(url, force);
+    }
+
+    void Abort()
+    {
+        DialogService.Close(model);
+    }
+
+
+}

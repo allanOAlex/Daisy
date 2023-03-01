@@ -1,0 +1,226 @@
+﻿@page "/carousels"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject ICarouselApiClient carouselApiClient
+@inject ILogger<Users> logger;
+@attribute [Authorize]
+
+<PageTitle>Carousels</PageTitle>
+
+
+<br />
+
+<RadzenText TextStyle="TextStyle.H6" TagName="TagName.H4" Class="my-4" Style="font-weight:bold;">Carousels</RadzenText>
+
+<div class="table-responsive">
+    <BSTable class="table table-sm table-condensed table-striped table-hover dt-responsive display nowrap" style="border: 1px solid grey;">
+        <BSTHead class="thead-dark position-sticky" style="background-color:#424874; color:#B5CBDE;">
+            <BSTR>
+                <th style="width:520px;">Image</th>
+                <th>Label</th>
+                <th>Paragraph</th>
+                <th style="width:150px;"><RadzenButton ButtonStyle="ButtonStyle.Secondary" Shade="Shade.Light" ButtonType="ButtonType.Button" Icon="add_circle_outline" Text="Add New" Size="ButtonSize.Small" class="float-end m-1" Style="text-transform: none;" Click=@CreateCarouselDialog /></th>
+            </BSTR>
+        </BSTHead>
+        <BSTBody>
+            @if (carousels.Count() > 0)
+            {
+                @foreach (var item in carousels)
+                {
+                    <BSTR style="font-size:15px">
+                        <BSTD><RadzenImage Path="@($"data:{item.ImageType};base64,{Convert.ToBase64String(item.ImageData)}")" style="max-width:500px; height:300px;" /></BSTD>
+                        <BSTD>@item.Label</BSTD>
+                        <BSTD>@item.Paragraph</BSTD>
+                        <BSTD>
+                            <RadzenButton ButtonType="ButtonType.Button" Icon="delete" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Light" Variant="Variant.Flat" Size="ButtonSize.Small" Text="" class="float-end m-1" Style="text-transform: none;" Click="() => DeleteCarouselDialog(item)" />
+                            <RadzenButton ButtonType="ButtonType.Button" Icon="edit" ButtonStyle="ButtonStyle.Dark" Variant="Variant.Flat" Size="ButtonSize.Small" Text="" class="float-end m-1" Style="text-transform: none;" Click="() => EditCarouselDialog(item)" />
+                        </BSTD>
+                    </BSTR>
+                }
+            }
+            else if (carousels.Count() <= 0)
+            {
+                <tr>
+                    <td colspan="100">
+                        <br>
+                        <p>
+                            <strong>
+                                No records to display
+                            </strong>
+                        </p>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                <tr>
+                    <td colspan="100">
+                        <br>
+                        <BSSpinner Color="BSColor.Primary" />
+                    </td>
+                </tr>
+            }
+        </BSTBody>
+    </BSTable>
+
+</div>
+
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    CreateCarouselRequest createCarouselRequest = new();
+    GetAllCarouselsResponse getAllCarouselsResponse = new();
+    GetCarouselByIdRequest getCarouselByIdRequest = new();
+    UpdateCarouselRequest updateCarouselRequest = new();
+    DeleteCarouselRequest deleteCarouselRequest = new();
+
+    IEnumerable<GetAllCarouselsResponse> carousels = new List<GetAllCarouselsResponse>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            var response = await carouselApiClient.GetAllCarousels();
+            if (response.Count > 0)
+            {
+                carousels = response;
+            }
+
+            carousels = response;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while fetching carousels.");
+            Error.ProcessException(ex);
+        }
+
+    }
+
+    public async Task CreateCarouselDialog()
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Add New Carousel" + "</label>" + "</b>";
+
+        var data = await DialogService.OpenAsync<CreateCarousel>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "CreateCarouselRequest",  createCarouselRequest}
+               },
+               new DialogOptions()
+               {
+                   Width = "800px",
+                   Height = "450px",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+
+               });
+
+        RefreshData();
+        StateHasChanged();
+    }
+
+    public void ViewCarouselDialog(GetAllCarouselsResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Carousel Details" + "</label>" + "</b>";
+
+        DialogService.OpenAsync<ViewEvent>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllCarouselsResponse",  model},
+                   { "GetCarouselByIdRequest",  getCarouselByIdRequest},
+               },
+               new DialogOptions()
+               {
+                   Width = "500px",
+                   Height = "380px",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+
+               });
+
+        StateHasChanged();
+    }
+
+    public async Task EditCarouselDialog(GetAllCarouselsResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Edit Carousel" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<EditCarousel>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllCarouselsResponse",  model},
+                   { "UpdateCarouselRequest",  updateCarouselRequest},
+               },
+               new DialogOptions()
+               {
+                   Width = "600",
+                   Height = "400",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+
+               });
+
+        RefreshData();
+        StateHasChanged();
+    }
+
+    public async Task DeleteCarouselDialog(GetAllCarouselsResponse model)
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Delete?" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<DeleteCarousel>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "GetAllCarouselsResponse",  model},
+                   { "DeleteCarouselRequest",  deleteCarouselRequest},
+               },
+               new DialogOptions()
+               {
+                   Width = "400px",
+                   Height = "200px",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+
+               });
+
+        RefreshData();
+        StateHasChanged();
+
+    }
+
+    public async void RefreshData()
+    {
+        try
+        {
+            carousels = await carouselApiClient.GetAllCarousels();
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+        StateHasChanged();
+    }
+
+    
+
+}

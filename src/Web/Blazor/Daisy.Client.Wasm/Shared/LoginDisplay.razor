@@ -1,0 +1,176 @@
+﻿@inject DialogService DialogService
+@inject NavigationManager navigationManager
+
+
+<ul class="nav justify-content-center">
+    <AuthorizeView>
+        <Authorized>
+            <li class="nav-item">
+                @if (@context.User.Identity.Name != null)
+                {
+                    
+                    <a class="nav-link active" style="color:white;" aria-current="page"><strong>Hello, @context.User.Identity.Name.Replace("[", "").Replace("]", "").Replace("\"", "").Replace(",", " ")!</strong></a>
+                }
+                else
+                {
+                    @if (userClaims != null)
+                    {
+                        <a class="nav-link active" style="color:white;" aria-current="page"><strong>Hello, @userClaims.FirstOrDefault(c => c.Type.Equals("name", StringComparison.OrdinalIgnoreCase))?.Value!</strong></a>
+                    }
+                }
+                
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" style="color:white;" aria-current="page" @onclick="@(() => LogoutDialog())"><strong>Logout</strong></a>
+            </li>
+        </Authorized>
+        <NotAuthorized>
+            <li class="nav-item">
+                <a class="nav-link active" style="color:white;" aria-current="page" @onclick="@(() => Login())"><strong>@LoginText</strong></a>
+            </li>
+        </NotAuthorized>
+    </AuthorizeView>
+</ul>
+
+
+@code{
+
+    [CascadingParameter]
+    public Task<AuthenticationState>? AuthState { get; set; }
+
+    [Parameter]
+    public string LoginText { get; set; } = "Login";
+
+    List<Claim> UserClaims = new();
+
+    CreateUserRequest createUserRequest = new();
+    LoginRequest loginRequest = new();
+    LogoutRequest logoutRequest = new();
+
+    public string FirstName { get; set; } = $"";
+    public string LastName { get; set; } = $"";
+    public string DisplayName { get; set; } = $"";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        LoginText = "Login";
+    }
+
+    private IEnumerable<Claim>? userClaims
+    {
+        get
+        {
+            var auth = AuthState.Result;
+            if (auth.User.Identity.IsAuthenticated)
+            {
+                UserClaims =  auth.User.Claims.ToList();
+                return UserClaims;
+            }
+            return new List<Claim>();
+        }
+    }
+
+    public async Task CreateUserDialog()
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Add New User" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<CreateUser>(modalHeaderTitle,
+               new Dictionary<string, object>()
+                   {
+                   { "CreateUserRequest",  createUserRequest}
+                   },
+               new DialogOptions()
+                   {
+                       Width = "600px",
+                       Height = "400px",
+                       Resizable = false,
+                       Draggable = true,
+                       ShowClose = true,
+                       CloseDialogOnEsc = true,
+                       CloseDialogOnOverlayClick = true,
+                       CssClass = "hidden-scroll"
+
+                   });
+
+
+    }
+
+    public async Task LoginDialog()
+    {
+
+
+        string modalHeaderTitle = "<b>" + "<label class" + "text-center " + " style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Login" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<Login>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "LoginRequest",  loginRequest}
+               },
+               new DialogOptions()
+                   {
+                       Width = "400px",
+                       Height = "400px",
+                       Resizable = false,
+                       Draggable = true,
+                       ShowClose = true,
+                       CloseDialogOnEsc = true,
+                       CloseDialogOnOverlayClick = true,
+                       CssClass = "hidden-scroll"
+
+                   });
+
+
+    }
+
+    public async Task LogoutDialog()
+    {
+        string modalHeaderTitle = "<b>" + "<label style=" + "color:#B5CBDE; background-color: #26428b !important; margin-top:3px;" + ">" + $"Logout?" + "</label>" + "</b>";
+
+        await DialogService.OpenAsync<Logout>(modalHeaderTitle,
+               new Dictionary<string, object>()
+               {
+                   { "LogoutRequest",  logoutRequest},
+               },
+               new DialogOptions()
+               {
+                   Width = "400px",
+                   Height = "200px",
+                   Resizable = false,
+                   Draggable = true,
+                   ShowClose = true,
+                   CloseDialogOnEsc = true,
+                   CloseDialogOnOverlayClick = true,
+
+               });
+
+    }
+
+    private async void Login()
+    {
+        try
+        {
+            LoginText = string.Empty;
+            StateHasChanged();
+            navigationManager.NavigateTo("/login");
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    private async void Logout()
+    {
+        try
+        {
+            navigationManager.NavigateTo("/logout", true);
+
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+}

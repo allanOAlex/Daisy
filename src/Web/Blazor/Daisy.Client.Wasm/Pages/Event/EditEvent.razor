@@ -1,0 +1,246 @@
+﻿@page "/editevent"
+@inject DialogService DialogService
+@inject IEventApiClient eventApiClient
+@inject NavigationManager navigationManager
+@attribute [Authorize]
+
+<PageTitle>Edit Event</PageTitle>
+
+<br />
+
+<div class="row">
+    <div class="d-flex justify-content-between">
+        <div class="col-xs-12 col-sm-4 col-md-4 show-md-only">
+            <div class="me-1 hidden-scroll" style="height: 25rem; justify-content:space-between; overflow-y: scroll;">
+                <RadzenImage Path="@Image" />
+            </div>
+        </div>
+        <div class="col">
+            <RadzenTemplateForm TItem="UpdateEventRequest" Data="@model" class="ms-4 hidden-scroll" style="overflow-y: scroll;">
+                <div class="row mb-2 show-xs-only">
+                    <div class="col-xs-12 col-sm-12 col-md-12 show-xs-only">
+                        <div class="me-1 hidden-scroll" style="height: 20rem; justify-content:center; overflow-y: scroll;">
+                            <RadzenImage Path="@Image" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col">
+                        <RadzenLabel Text="Image Name" Style="font-size:15px;" />
+                        <RadzenTextBox Name="ImageName" @bind-Value="@chosenFileName" Class="w-100" Style="height:30px;" />
+                        <div class="input-group mt-1">
+                            <div class="custom-file">
+                                <InputFile class="custom-file-input" OnChange="OnChangeImage" accept="image/png, image/jpeg, image/gif" id="inputFile" />
+                            </div>
+                        </div>
+                        <RadzenRequiredValidator Text="Image is required" Component="ImageName" />
+                    </div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-xs-12 col-sm-6 col-md-4">
+                        <RadzenLabel Text="Event Title" Style="font-size:15px;" />
+                        <RadzenTextBox Name="Title" @bind-Value="@model.Title" Class="w-100" Style="height:30px;" />
+                        <RadzenRequiredValidator Text="Title is required" Component="Title" />
+                        <RadzenRegexValidator Component="Title" Text="Value must contain 3 or more alphanumeric characters" Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
+                    </div>
+                    <div class="col-xs-12 col-sm-6 col-md-8">
+                        <RadzenLabel Text="Description" Style="font-size:15px;" />
+                        <RadzenTextArea Name="Description" @bind-Value="@model.Description" Class="w-100 h-50" />
+                        <RadzenRequiredValidator Text="Description is required" Component="Description" />
+                        <RadzenRegexValidator Component="Title" Text="Value must contain 3 or more alphanumeric characters" Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
+                    </div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-xs-12 col-sm-6 col-md-6">
+                        <RadzenLabel Text="Location" Style="font-size:15px;" />
+                        <RadzenTextBox Name="Location" @bind-Value="@model.Location" Class="w-100" Style="height:30px;" />
+                        <RadzenRequiredValidator Text="Location is required" Component="Location" />
+                        <RadzenRegexValidator Component="Title" Text="Value must contain 3 or more alphanumeric characters" Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
+                    </div>
+                    <div class="col-xs-12 col-sm-6 col-md-6">
+                        <RadzenLabel Text="Venue" Style="font-size:15px;" />
+                        <RadzenTextArea Name="Venue" @bind-Value="@model.Venue" Class="w-100 h-50" />
+                        <RadzenRequiredValidator Text="Venue is required" Component="Venue" />
+                        <RadzenRegexValidator Component="Title" Text="Value must contain 3 or more alphanumeric characters" Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-xs-12 col-sm-4 col-md-4">
+                        <RadzenLabel Text="Start Date" Style="font-size:15px;" />
+                        <RadzenDatePicker DateFormat="d" Name="StartDate" @bind-Value="@model.StartDate" ShowTime="false" DateRender=@DateRenderSpecial />
+                        <RadzenRequiredValidator Text="This Date is required" Component="StartDate" />
+                    </div>
+                    <div class="col-xs-12 col-sm-4 col-md-4">
+                        <RadzenLabel Text="Time" Style="font-size:15px;" />
+                        <RadzenDatePicker Name="Time" TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" ShowSeconds="false" Change=@(args => OnChange()) HourFormat="24" Class="w-60" />
+                        <RadzenRequiredValidator Text="Time is required" Component="Time" />
+                    </div>
+                    <div class="col-xs-12 col-sm-4 col-md-4">
+                        <RadzenLabel Text="End Date" Style="font-size:15px;" />
+                        <RadzenDatePicker DateFormat="d" Name="EndDate" @bind-Value="@model.EndDate" ShowTime="false" DateRender=@DateRenderSpecial />
+                        <RadzenRequiredValidator Text="This Date is required" Component="EndDate" />
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col">
+                        <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Shade="Shade.Dark" Text="Save" Icon="check_circle" Size="ButtonSize.Small" class="float-end m-1 rounded-pill" Style="text-transform: none;" Click=@(() => UpdateEvent(@model.Id, @model)) />
+                        <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="Cancel" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform: none;" class="float-end m-1 rounded-pill" Click=@OnCancel />
+                        <RadzenButton ButtonType="ButtonType.Reset" ButtonStyle="ButtonStyle.Light" Text="Reset" Icon="refresh" Size="ButtonSize.Small" class=" m-1 rounded-pill" Style="text-transform: none;" />
+
+                    </div>
+                </div>
+            </RadzenTemplateForm>
+
+        </div>
+
+    </div>
+    
+</div>
+
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public UpdateEventRequest? UpdateEventRequest { get; set; }
+
+    [Parameter]
+    public GetAllEventsResponse? GetAllEventsResponse { get; set; }
+
+    UpdateEventRequest? model = new UpdateEventRequest();
+
+    [Parameter]
+    public SchedulerEventDto? EventForEdit { get; set; }
+
+    [Parameter]
+    public DateTime Start { get; set; }
+
+    [Parameter]
+    public DateTime End { get; set; }
+
+    [Parameter]
+    public string Image { get; set; } = "";
+
+    string chosenFileName = string.Empty;
+    bool popup;
+    string alphanumericRegex = @"^[a-zA-Z0-9 _@./#&+-]{3,}$";
+
+    UpdateEventRequest updateEventModel = new();
+
+    DateTime? dateValue = DateTime.Today;
+    IEnumerable<DateTime> dates = new DateTime[] { DateTime.Today.AddDays(-1), DateTime.Today.AddDays(1) };
+    IEnumerable<DateTime> today = new DateTime[] { DateTime.Today.AddDays(0) };
+
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            Id = GetAllEventsResponse.Id;
+            Image = $"data:{GetAllEventsResponse.ImageType};base64,{Convert.ToBase64String(GetAllEventsResponse.ImageData)}";
+            model = UpdateEventRequest;
+            model.Id = GetAllEventsResponse.Id;
+            model.Image = GetAllEventsResponse.Image;
+            model.ImageData = GetAllEventsResponse.ImageData;
+            model.ImageType = GetAllEventsResponse.ImageType;
+            model.Title = GetAllEventsResponse.Title;
+            model.Description = GetAllEventsResponse.Description;
+            model.StartDate = GetAllEventsResponse.StartDate;
+            model.Time = GetAllEventsResponse.Time;
+            model.EndDate = GetAllEventsResponse.EndDate;
+            model.Location = GetAllEventsResponse.Location;
+            model.Venue = GetAllEventsResponse.Venue;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+
+    }
+
+    async Task OnChangeImage(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var files = e.GetMultipleFiles();
+            foreach (var file in files)
+            {
+                chosenFileName = file.Name;
+                var resizedFile = await file.RequestImageFileAsync(file.ContentType, 550, 450);
+                var buf = new byte[resizedFile.Size];
+                using (var stream = resizedFile.OpenReadStream())
+                {
+                    await stream.ReadAsync(buf);
+                }
+
+                model.ImageName = file.Name;
+                model.ImageData = buf;
+                model.Image = Convert.ToBase64String(buf);
+                model.ImageType = file.ContentType;
+
+                Image = $"data:{model.ImageType};base64,{Convert.ToBase64String(model.ImageData)}";
+
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+        
+    }
+
+    async void UpdateEvent(int Id, UpdateEventRequest request)
+    {
+        try
+        {
+            var result = await eventApiClient.UpdateEvent(Id, request);
+            if (!result.Successful)
+            {
+                await DialogService.Alert($"Error updating event", $"{DialogExtensions.failureHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+            else
+            {
+                DialogService.Close(request);
+                await DialogService.Alert("Event Updated Successfully", $"{DialogExtensions.successHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+                
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+    }
+
+    public async Task NavigateToUrl(string url)
+    {
+        navigationManager.NavigateTo(url);
+    }
+
+    void DateRenderSpecial(DateRenderEventArgs args)
+    {
+        if (today.Contains(args.Date))
+        {
+            args.Attributes.Add("style", "background-color: #ff6d41; border-color: white;");
+        }
+
+        args.Disabled = dates.Contains(args.Date);
+    }
+
+    void OnChange()
+    {
+    }
+
+    void OnCancel()
+    {
+        DialogService.Close(model);
+    }
+
+
+}

@@ -1,0 +1,194 @@
+﻿@page "/addcarousel"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject NavigationManager navigationManager
+@inject ICarouselApiClient carouselApiClient
+@attribute [Authorize]
+
+<PageTitle>Create Carousel</PageTitle>
+
+<div class="row">
+    <div class="d-flex justify-content-between">
+        <div class="col-4">
+            <div class="me-1 hidden-scroll" style=" justify-content:space-between; overflow-y: scroll;">
+                <RadzenImage Path="@Image" />
+            </div>
+        </div>
+        <div class="col">
+            <RadzenCard Style="width: 100%; border: var(--rz-grid-cell-border); position:relative" Class="rz-shadow-0 ms-2">
+                <RadzenTemplateForm TItem="CreateCarouselRequest" Data="@model" class="m-1">
+                    <div class="row mb-2">
+                        <div class="col">
+                            <RadzenLabel Text="Image Name" Style="font-size:15px;" />
+                            <RadzenTextBox Name="ImageName" @bind-Value="@chosenFileName" Class="w-100" Style="height:30px;" />
+                            <div class="input-group mt-1">
+                                <div class="custom-file">
+                                    <InputFile class="custom-file-input" OnChange="OnChange" accept="image/png, image/jpeg, image/gif" id="inputFile" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-4">
+                            <RadzenLabel Text="Label" Style="font-size:15px;" />
+                            <RadzenTextBox Name="Location" @bind-Value="@model.Label" Class="w-100" Style="height:30px;" />
+                            <RadzenRequiredValidator Text="Label is required" Component="Location" />
+                        </div>
+                        <div class="col">
+                            <RadzenLabel Text="Paragraph" Style="font-size:15px;" />
+                            <RadzenTextArea Name="Paragraph" @bind-Value="@model.Paragraph" Class="w-100 h-50" />
+                            <RadzenRequiredValidator Text="Paragraph is required" Component="Paragraph" />
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col">
+                            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Shade="Shade.Dark" Text="Save" Icon="check_circle" Size="ButtonSize.Small" class="float-end m-1 rounded-pill" Style="text-transform: none;" Click=@(() => OnSubmit(@model)) />
+                            <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="Cancel" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform: none;" class="float-end m-1 rounded-pill" Click=@OnCancel />
+                            <RadzenButton ButtonType="ButtonType.Reset" ButtonStyle="ButtonStyle.Light" Text="Reset" Icon="refresh" Size="ButtonSize.Small" class=" m-1 rounded-pill" Style="text-transform: none;" />
+                        </div>
+                    </div>
+                </RadzenTemplateForm>
+            </RadzenCard>
+        </div>
+
+    </div>
+
+</div>
+
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public string Image { get; set; } = "";
+
+    [Parameter]
+    public CreateCarouselRequest? CreateCarouselRequest { get; set; }
+
+    CreateCarouselRequest model = new CreateCarouselRequest();
+
+    List<CreateCarouselRequest> filesBase64 = new List<CreateCarouselRequest>();
+    string message = "InputFile";
+    string chosenFileName = string.Empty;
+    bool isDisabled = false;
+
+
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            if (model.ImageType == null)
+            {
+                model.ImageType = DialogExtensions.sampleImageType;
+            }
+            if (model.ImageData == null)
+            {
+                model.ImageData = DialogExtensions.sampleImageData;
+            }
+
+            Image = $"data:{model.ImageType};base64,{Convert.ToBase64String(model.ImageData)}";
+            model = CreateCarouselRequest;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+        
+
+    }
+
+    async Task OnChange(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var files = e.GetMultipleFiles(); // get the files selected by the users
+            foreach (var file in files)
+            {
+                chosenFileName = file.Name;
+                var resizedFile = await file.RequestImageFileAsync(file.ContentType, 1200, 600); // resize the image file
+                var buf = new byte[resizedFile.Size]; // allocate a buffer to fill with the file's data
+                using (var stream = resizedFile.OpenReadStream())
+                {
+                    await stream.ReadAsync(buf); // copy the stream to the buffer
+                }
+
+                model.Label = file.Name;
+                model.ImageData = buf;
+                model.Image = Convert.ToBase64String(buf);
+                model.ImageType = file.ContentType;
+
+                filesBase64.Add(new CreateCarouselRequest
+                {
+                    Image = Convert.ToBase64String(buf),
+                    ImageType = file.ContentType,
+                    Label = file.Name
+                });
+            }
+            message = "Click Upload to continue";
+            Image = $"data:{model.ImageType};base64,{Convert.ToBase64String(model.ImageData)}";
+        }
+        catch (Exception ex)
+        {
+            OnCancel();
+            Error.ProcessException(ex);
+        }
+        
+    }
+
+    async Task Upload()
+    {
+        try
+        {
+            isDisabled = true;
+            using (var msg = await Http.PostAsJsonAsync<List<CreateCarouselRequest>>("/api/upload", filesBase64))
+            {
+                isDisabled = false;
+                if (msg.IsSuccessStatusCode)
+                {
+                    message = $"{filesBase64.Count} files uploaded";
+                    filesBase64.Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            OnCancel();
+            Error.ProcessException(ex);
+        }
+        
+    }
+
+    async void OnSubmit(CreateCarouselRequest request)
+    {
+        try
+        {
+            var result = await carouselApiClient.CreateCarousel(request);
+            if (!result.Successful)
+            {
+                await DialogService.Alert($"Error adding carousel", $"{DialogExtensions.failureHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+
+            }
+            else
+            {
+                DialogService.Close(request);
+                await DialogService.Alert("Carousel Added Successfully", $"{DialogExtensions.successHeader}", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+        
+    }
+
+    void OnCancel()
+    {
+        DialogService.Close(model);
+    }
+
+
+}

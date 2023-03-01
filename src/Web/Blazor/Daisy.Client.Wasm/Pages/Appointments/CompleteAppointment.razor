@@ -1,0 +1,161 @@
+﻿@page "/completeappointment"
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject IAppointmentApiClient appointmentApiClient
+@inject NavigationManager navigationManager
+@inject ILogger<CompleteAppointment> logger;
+@attribute [Authorize]
+
+<PageTitle>Complete Appointment</PageTitle>
+
+<RadzenTemplateForm TItem="CompleteAppointmentRequest" Data="@model" class="m-2">
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group mb-2">
+                <RadzenLabel Text="Remaks" Style="font-size:15px;" />
+                <RadzenTextArea Name="CompleteRemarks" @bind-Value="@model.CompletedRemarks" Class="w-100 h-50" />
+                <RadzenRequiredValidator Text="Please type N/A if not applicable." Component="CompleteRemarks" />
+                <RadzenRegexValidator Component="CompleteRemarks" Text="Value must contain 3 or more alphanumeric characters" Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
+            </div>
+
+        </div>
+        <div class="col">
+            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Text="Complete" Icon="check_circle" Size="ButtonSize.Small" Style="text-transform: none;" class="float-end m-1 rounded-pill" Click=@(() => DoCompleteAppointment(model)) />
+            <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="Abort" Icon="highlight_off" Size="ButtonSize.Small" Style="text-transform: none;" class="float-end m-1 rounded-pill" Click=@Abort />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+
+    [CascadingParameter]
+    public Task<AuthenticationState>? AuthState { get; set; }
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public CompleteAppointmentRequest? CompleteAppointmentRequest { get; set; }
+
+    [Parameter]
+    public GetAllAppointmentsResponse? GetAllAppointmentsResponse { get; set; }
+
+    CompleteAppointmentRequest? model = new CompleteAppointmentRequest();
+    public int UserId { get; set; }
+    string alphanumericRegex = @"^[a-zA-Z0-9 _@./#&+-]{3,}$";
+    bool popup;
+    public string CompletedRemarks { get; set; } = "";
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            var userId = int.Parse(AuthState.Result.User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            UserId = userId;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error getting UserId.");
+            Error.ProcessException(ex);
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            Id = GetAllAppointmentsResponse.Id;
+            model = CompleteAppointmentRequest;
+            model.Id = GetAllAppointmentsResponse.Id;
+            model.UserId = UserId;
+            model.Salutation = GetAllAppointmentsResponse.Salutation;
+            model.FirstName = GetAllAppointmentsResponse.FirstName;
+            model.MiddleName = GetAllAppointmentsResponse.MiddleName;
+            model.LastName = GetAllAppointmentsResponse.LastName;
+            model.ContactNumber = GetAllAppointmentsResponse.ContactNumber;
+            model.Email = GetAllAppointmentsResponse.Email;
+            model.Date = GetAllAppointmentsResponse.Date;
+            model.Time = GetAllAppointmentsResponse.Time;
+            model.PreferedLocation = GetAllAppointmentsResponse.PreferedLocation;
+            model.Remarks = GetAllAppointmentsResponse.Remarks;
+            model.CreatedOn = GetAllAppointmentsResponse.CreatedOn;
+            model.CreatedBy = GetAllAppointmentsResponse.CreatedBy;
+            model.UpdatedOn = GetAllAppointmentsResponse.UpdatedOn;
+            model.UpdatedBy = GetAllAppointmentsResponse.UpdatedBy;
+            model.IsCancelled = GetAllAppointmentsResponse.IsCancelled;
+            model.CancelledOn = GetAllAppointmentsResponse.CancelledOn;
+            model.CancelledBy = GetAllAppointmentsResponse.CancelledBy;
+            model.IsComplete = GetAllAppointmentsResponse.IsComplete;
+            model.CompletedOn = GetAllAppointmentsResponse.CompletedOn;
+            model.CompletedBy = UserId;
+            model.CompletedRemarks = GetAllAppointmentsResponse.CompletedRemarks;
+            
+
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+    }
+
+    async void Complete(int Id)
+    {
+        try
+        {
+            var result = await appointmentApiClient.Complete(Id, UserId);
+            if (!result.Successful)
+            {
+                DialogService.Close();
+                await DialogService.Alert("Error Completing Appointment", $"{DialogExtensions.failureHeader}", new AlertOptions() {Height ="200px", OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+            else
+            {
+                DialogService.Close();
+                await DialogService.Alert("Appointment Completed Successfully", $"{DialogExtensions.successHeader}", new AlertOptions() { Height = "200px", OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+
+    }
+
+    async void DoCompleteAppointment(CompleteAppointmentRequest request)
+    {
+        try
+        {
+            var result = await appointmentApiClient.CompleteAppointment(request);
+            if (!result.Successful)
+            {
+                DialogService.Close();
+                await DialogService.Alert("Error Completing Appointment", $"{DialogExtensions.failureHeader}", new AlertOptions() { Height = "200px", OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+            else
+            {
+                DialogService.Close();
+                await DialogService.Alert("Appointment Completed Successfully", $"{DialogExtensions.successHeader}", new AlertOptions() { Height = "200px", OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessException(ex);
+        }
+
+
+    }
+
+    void Abort()
+    {
+        DialogService.Close(model);
+    }
+
+}

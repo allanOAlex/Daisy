@@ -1,0 +1,119 @@
+﻿@inject HttpClient Http
+@inject DialogService DialogService
+@inject IEventApiClient eventApiClient
+
+
+<div>
+    <BSCard Class="m-1 border-0 bg-transparent">
+        <BSCard CardType="CardType.Title" Class="ms-3 mt-3 text-center" style="font-weight:bold; color:#424874;">Scheduled Events</BSCard>
+        <BSCard CardType="CardType.Body" class="mt-2" style="display:flex; flex-direction:column; justify-content:space-between; align-content:center; height:400px;">
+            <div class="hidden-scroll" style="display:flex; flex-direction:column; justify-content:space-between; align-content:center; overflow-y: scroll;">
+                @if (events.Count() > 0)
+                {
+                    <RadzenDataList PageSize="6" WrapItems="true" AllowPaging="false" Data="@events" TItem="GetAllEventsResponse">
+                        <Template Context="data">
+                            <RadzenCard class="border-0 bg-transparent align-content-center">
+                                <div class="row">
+                                    <div class="text-center">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: #424874" class="mb-0"><strong>@(data.Location)</strong></RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color:#c5a600;" class="mb-0"><strong>@(data.StartDate.ToString("dddd, dd MMMM yyyy"))</strong></RadzenText>
+
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col mt-3 d-flex justify-content-center">
+                                        <RadzenButton ButtonType="ButtonType.Button" Icon="info" ButtonStyle="ButtonStyle.Dark" Variant="Variant.Outlined" Size="ButtonSize.Small" Text="View" class="rounded-pill" Style="text-transform: none;" Click="() => ViewEventDialog(data)" />
+                                    </div>
+                                </div>
+                            </RadzenCard>
+                        </Template>
+                    </RadzenDataList>
+
+                }
+                else
+                {
+                    <RadzenCard class="border-0 bg-transparent align-content-center">
+                        <div class="row">
+                            <div class="text-center">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: #424874" class="mb-0"><strong>@(noLocation)</strong></RadzenText>
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color:#c5a600;" class="mb-0"><strong>@(noDate)</strong></RadzenText>
+                            </div>
+                        </div>
+                    </RadzenCard>
+                }
+            </div>
+        </BSCard>
+    </BSCard>
+</div>
+
+
+@code {
+
+
+    GetAllEventsResponse? getAllEventsResponse = new();
+    GetEventByIdResponse? getEventByIdResponse = new();
+    IEnumerable<GetAllEventsResponse> events = new List<GetAllEventsResponse>();
+
+    private Events? eventsComponent = new();
+    private ViewEvent? viewEventComponent;
+
+    public string noLocation = "Scheduled events will be displayed here when available.";
+    public string noDate = "Thank you for choosing and working with us!!";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        try
+        {
+            var response = await eventApiClient.GetAllEvents();
+            if (response.Count > 0)
+            {
+                events = response;
+            }
+
+            events = response;
+            
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+
+    }
+
+    async Task ViewEventDialog(GetAllEventsResponse param)
+    {
+        try
+        {
+            string modalHeaderTitle = "<b>" + "<label style=" + "color:whitesmoke; background-color: #26428b !important; margin-top:3px;" + ">" + $"Event Details" + "</label>" + "</b>";
+
+            await DialogService.OpenAsync<ViewEvent>(modalHeaderTitle,
+                   new Dictionary<string, object>()
+                       {
+                   { "GetAllEventsResponse",  param},
+                   { "GetEventByIdResponse",  getEventByIdResponse},
+                       },
+                   new DialogOptions()
+                       {
+                           Width = "700px",
+                           Height = "500px",
+                           Resizable = false,
+                           Draggable = true,
+                           ShowClose = true,
+                           CloseDialogOnEsc = true,
+                           CloseDialogOnOverlayClick = true,
+                           CssClass = ".hidden-scroll"
+
+                       });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            throw new Exception(ex.Message);
+        }
+        
+
+    }
+
+}
