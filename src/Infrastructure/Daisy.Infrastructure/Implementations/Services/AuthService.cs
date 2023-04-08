@@ -275,22 +275,21 @@ namespace Daisy.Infrastructure.Implementations.Services
                     return new ResetPasswordResponse { Successful = false, Message = "NotFound|Sorry, somehow we could not find this user" };
                 }
 
-                var passResetToken = await ValidatePasswordResetToken(resetPasswordRequest.Token);
-                if (passResetToken != user.PasswordResetToken)
+                var result = await userManager.VerifyUserTokenAsync(user, userManager.Options.Tokens.PasswordResetTokenProvider, "ResetPassword", await ValidatePasswordResetToken(resetPasswordRequest.Token));
+                if (!result)
                 {
                     return new ResetPasswordResponse { Successful = false, Message = $"Invalid password reset key" };
                 }
 
-                var request = new MapperConfiguration(cfg => cfg.CreateMap<ResetPasswordRequest, AppUser>());
-                var response = new MapperConfiguration(cfg => cfg.CreateMap<AppUser, ResetPasswordResponse>());
-                IMapper requestMap = request.CreateMapper();
-                IMapper responseMap = request.CreateMapper();
+                var passReset = await userManager.ResetPasswordAsync(user, user.PasswordResetToken, resetPasswordRequest.Password);
+                List<string> errors = new();
+                foreach (var error in passReset.Errors)
+                {
+                    errors.Add(error.Description);
+                }
 
-                var destination = requestMap.Map<ResetPasswordRequest, AppUser>(resetPasswordRequest);
-                destination.PasswordResetToken = user.PasswordResetToken;
-                var result = await unitOfWork.Auth.ResetPassword(destination);
+                return passReset.Succeeded ? new ResetPasswordResponse { Successful = true, Message = "Password reset successfully!" } : new ResetPasswordResponse { Successful = false, Message = "Password reset failed.", Errors = errors };
 
-                return result.Successful == true ? new ResetPasswordResponse { Successful = true, Message = $"Your password has been reset. Please <a class = " + " nav-link active" + " aria-current= " + "page" + "@onclick=" + "@(() => Login())>click here to log in</a>" } : new ResetPasswordResponse { Successful = false, Message = $"{result.Message}", Errors = result.Errors };
             }
             catch (Exception ex)
             {
