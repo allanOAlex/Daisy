@@ -16,5 +16,6 @@ namespace Daisy.Shared.Requests.User
         public string? PhoneNumber { get; set; }
         public DateTime UpdatedOn { get; set; }
         public int UpdatedBy { get; set; }
+        public string? PasswordResetToken { get; set; }
     }
 }

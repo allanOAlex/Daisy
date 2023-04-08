@@ -151,16 +151,14 @@
     {
         try
         {
-            LoginText = string.Empty;
-            StateHasChanged();
             navigationManager.NavigateTo("/login");
+
         }
         catch (Exception ex)
         {
             throw new Exception(ex.Message);
         }
     }
-
     private async void Logout()
     {
         try

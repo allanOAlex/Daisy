@@ -7,6 +7,7 @@ using Daisy.Client.Wasm.ApiClients.User;
 using Daisy.Client.Wasm.AuthProviders;
 using Daisy.Client.Wasm.Handlers.AuthHandlers;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Routing;
 
 namespace Daisy.Client.Wasm.Extensions
 {
@@ -22,10 +23,8 @@ namespace Daisy.Client.Wasm.Extensions
             services.AddScoped<IRoleApiClient, RoleApiClient>();
 
             services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
-            //services.AddScoped<ApiAuthenticationStateProvider>();
-            //services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<ApiAuthenticationStateProvider>());
 
-            services.AddTransient<ApiAuthorizationHandler>();
+            //services.AddTransient<ApiAuthorizationHandler>();
 
             return services;
 

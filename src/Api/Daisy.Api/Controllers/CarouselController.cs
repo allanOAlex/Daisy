@@ -15,7 +15,6 @@ namespace Daisy.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [EnableCors("OpenCORSPolicy")]
 
     public class CarouselController : ControllerBase
     {

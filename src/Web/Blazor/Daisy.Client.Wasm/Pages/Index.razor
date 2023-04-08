@@ -3,7 +3,6 @@
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject NavigationManager navigationManager
-@implements IDisposable
 
 
 <PageTitle>Tuomoke</PageTitle>
@@ -21,10 +20,7 @@
     <IndexReachUs />
 </section>
 <br />
-<section >
-    <IndexContacts />
-</section>
-<br />
+
 
 
 @code {
@@ -45,12 +41,10 @@
         }
     }
 
-
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        string icon = "<i class=" + "bi bi-check-circle " + "style=" + "color:#18A558; " + ">";
         var auth = AuthState.Result;
         if (auth.User.Identity.IsAuthenticated)
         {
@@ -70,10 +64,6 @@
 
     }
 
-    public void Dispose()
-    {
-        
-    }
 
 }
 

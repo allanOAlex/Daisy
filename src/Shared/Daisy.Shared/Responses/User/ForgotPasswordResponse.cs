@@ -11,6 +11,7 @@ namespace Daisy.Shared.Responses.User
         public int Id { get; set; }
         public string? Password { get; set; }
         public string? Token { get; set; }
+        public string? ResetUrl { get; set; }
         public bool Successful { get; set; }
         public string? Message { get; set; }
     }

@@ -4,12 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Daisy.Shared.Responses.User
+namespace Daisy.Shared.Responses.Auth
 {
-    public class ResetPasswordResponse
+    public class PassResetTokenValidationResponse
     {
         public bool Successful { get; set; }
         public string? Message { get; set; }
-        public List<string>? Errors { get; set; }
     }
 }

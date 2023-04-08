@@ -12,7 +12,6 @@ namespace Daisy.Infrastructure.Extensions
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services)
         {
-            //services.AddSingleton<DapperContext>();
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddTransient(typeof(IBaseRepository<>), typeof(BaseRepository<>));

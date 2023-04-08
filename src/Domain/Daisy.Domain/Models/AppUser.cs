@@ -14,7 +14,6 @@ namespace Daisy.Domain.Models
     {
         public string? Password { get; set; }
 
-        
         public string? FirstName { get; set; }
 
         public string? LastName { get; set; }
@@ -57,6 +56,10 @@ namespace Daisy.Domain.Models
         public DateTime DeletedOn { get; set; }
 
         public int DeletedBy { get; set; }
+
+        public string? PasswordResetToken { get; set; }
+
+
 
         [NotMapped]
         public bool Successful { get; set; }

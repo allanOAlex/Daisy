@@ -29,13 +29,13 @@ namespace Daisy.Client.Wasm.AuthProviders
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             var savedToken = await localStorage.GetItemAsync<string>("authToken");
-            AuthExtensions.savedToken= savedToken;
 
             if (string.IsNullOrWhiteSpace(savedToken))
             {
                 return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
             }
 
+            AuthExtensions.savedToken = savedToken;
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", savedToken);
 
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(ParseClaimsFromJwt(savedToken), "jwt")));

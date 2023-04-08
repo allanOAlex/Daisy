@@ -9,7 +9,9 @@ namespace Daisy.Shared.Requests.User
     public class ResetPasswordRequest
     {
         public int Id { get; set; }
+        public string? Token { get; set; }
         public string? Password { get; set; }    
-        public string? Token { get; set; }    
+        public string? PasswordConfirm { get; set; }    
+          
     }
 }

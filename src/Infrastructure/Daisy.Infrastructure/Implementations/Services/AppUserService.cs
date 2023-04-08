@@ -3,6 +3,7 @@ using Daisy.Application.Abstractions.Interfaces;
 using Daisy.Application.Abstractions.IServices;
 using Daisy.Domain.Exceptions.ModelExceptions;
 using Daisy.Domain.Models;
+using Daisy.Infrastructure.Context;
 using Daisy.Shared.Extensions;
 using Daisy.Shared.Requests.Event;
 using Daisy.Shared.Requests.User;
@@ -13,6 +14,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
+using System.Xml;
+using static Dapper.SqlMapper;
 
 namespace Daisy.Infrastructure.Implementations.Services
 {
@@ -133,16 +136,17 @@ namespace Daisy.Infrastructure.Implementations.Services
             try
             {
                 updateUserRequest.UpdatedOn = DateTime.Now;
-                updateUserRequest.UpdatedBy = 1; // get the user who is logged in
+                updateUserRequest.UpdatedBy = updateUserRequest.UpdatedBy;
 
-                var request = new MapperConfiguration(cfg => cfg.CreateMap<UpdateUserRequest, AppUser>());
+                var entity = unitOfWork.AppUsers.FindByCondition(e => e.Id == updateUserRequest.Id).AsNoTracking().FirstOrDefault();
+
+                var request = new MapperConfiguration(cfg => cfg.CreateMap<UpdateUserRequest, AppUser>().ForMember(dest => dest.Id, opt => opt.Ignore()).ForAllMembers(opts => opts.Condition((src, dest, srcMember, destMember) => srcMember != null && !srcMember.Equals(destMember))));
                 var response = new MapperConfiguration(cfg => cfg.CreateMap<AppUser, UpdateUserResponse>());
-
+                
                 IMapper requestMap = request.CreateMapper();
                 IMapper responseMap = response.CreateMapper();
 
-                var destination = requestMap.Map<UpdateUserRequest, AppUser>(updateUserRequest);
-                //AppUser userToUpdate = await unitOfWork.AppUsers.DapperUpdate(destination);
+                var destination = requestMap.Map(updateUserRequest, entity);
                 AppUser userToUpdate = unitOfWork.AppUsers.Update(destination);
                 var result = responseMap.Map<AppUser, UpdateUserResponse>(userToUpdate);
 
@@ -154,6 +158,36 @@ namespace Daisy.Infrastructure.Implementations.Services
                 }
                 catch (DbUpdateConcurrencyException ex)
                 {
+                    var entry = ex.Entries.Single();
+                    var databaseValues = entry.GetDatabaseValues();
+                    var clientValues = entry.CurrentValues;
+
+                    if (databaseValues == null)
+                    {
+                        // The entity has been deleted from the database
+                        // Handle this situation as appropriate
+                    }
+                    else
+                    {
+                        // The entity has been modified in the database
+                        var databaseEntity = databaseValues.ToObject();
+                        var clientEntity = clientValues.ToObject();
+
+                        // Update the entity properties with the database values
+                        foreach (var property in clientValues.Properties)
+                        {
+                            var databaseValue = databaseValues[property];
+                            var clientValue = clientValues[property];
+
+                            if (databaseValue != null && !databaseValue.Equals(clientValue))
+                            {
+                                clientValues[property] = databaseValue;
+                            }
+                        }
+
+                        // Retry the update operation
+                        await unitOfWork.CompleteAsync();
+                    }
                     throw ex;
                 }
             }
