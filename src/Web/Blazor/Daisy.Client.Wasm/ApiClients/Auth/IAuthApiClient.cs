@@ -11,5 +11,6 @@ namespace Daisy.Client.Wasm.ApiClients.Auth
         Task<LogoutResponse> LogoutWithSignInManager(LogoutRequest request);
         Task<ForgotPasswordResponse> ForgotPassword(ForgotPasswordRequest request);
         Task<ResetPasswordResponse> ResetPassword(ResetPasswordRequest request);
+        Task<ResetPasswordResponse> ResetUserPassword(string userId, string token);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Daisy.Domain.Models;
+using Daisy.Shared.Responses.User;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,7 @@ namespace Daisy.Application.Abstractions.IRepositories
     {
         Task<AppUser> LoginWithSignInManager(AppUser entity);
         Task<AppUser> LogoutWithSignInManager(AppUser entity);
-        Task<AppUser> ResetPassword(AppUser entity, string token);
+        Task<ResetPasswordResponse> ResetPassword(AppUser entity);
+        //Task<AppUser> ResetPassword(AppUser entity, string token);
     }
 }

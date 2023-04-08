@@ -1,6 +1,7 @@
 ﻿using Daisy.Application.Abstractions.IRepositories;
 using Daisy.Domain.Models;
 using Daisy.Infrastructure.Context;
+using Daisy.Shared.Responses.User;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -76,24 +77,25 @@ namespace Daisy.Infrastructure.Implementations.Repositories
             
         }
 
-        public async Task<AppUser> ResetPassword(AppUser entity, string token)
+        public async Task<ResetPasswordResponse> ResetPassword(AppUser entity)
         {
             try
             {
-                var result = await userManager.ResetPasswordAsync(entity, token, entity.Password);
+                var result = await userManager.ResetPasswordAsync(entity, entity.PasswordResetToken, entity.Password);
                 if (result.Succeeded)
                 {
                     entity.Successful = true;
-                    return entity;
+                    return new ResetPasswordResponse { Successful = true, Message = "Password reset successfully!"};
                 }
                 else
                 {
+                    List<string> errors = new();
                     foreach (var error in result.Errors)
                     {
-                        // Handle error
+                        errors.Add(error.Description);
                     }
 
-                    return entity;
+                    return new ResetPasswordResponse { Successful = false, Message = "Password reset failed.", Errors = errors};
                 }
                 
             }

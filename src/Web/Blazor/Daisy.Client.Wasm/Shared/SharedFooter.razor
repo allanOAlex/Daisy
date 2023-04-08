@@ -1,4 +1,7 @@
-﻿<footer class="text-center text-secondary fixed-bottom pt-2 mt-3 d-flex justify-content-center shared-footer" style="background-color: #f1f1f1;">
+﻿@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<footer class="text-center text-secondary fixed-bottom pt-2 mt-3 d-flex justify-content-center shared-footer" style="background-color: #f1f1f1;">
     <div class="container p-0">
         <div class="row">
             <div class="col-xs-12 col-md-4 my-1 ">
@@ -15,7 +18,7 @@
                     <a class="btn btn-link btn-floating btn-sm text-dark m-1"
                        href="#!"
                        role="button"
-                       data-mdb-ripple-color="dark">
+                       data-mdb-ripple-color="dark" @onclick="@(() => WhatsAppIconClicked())">
                         <i class="fa-brands fa-whatsapp"></i>
                     </a>
 
@@ -23,7 +26,7 @@
                     <a class="btn btn-link btn-floating btn-sm text-dark m-1"
                        href="#!"
                        role="button"
-                       data-mdb-ripple-color="dark">
+                       data-mdb-ripple-color="dark" @onclick="@(() => FacebookIconClicked())">
                         <i class="fa-brands fa-facebook"></i>
                     </a>
 
@@ -31,7 +34,7 @@
                     <a class="btn btn-link btn-floating btn-sm text-dark m-1"
                        href="#!"
                        role="button"
-                       data-mdb-ripple-color="dark">
+                       data-mdb-ripple-color="dark" @onclick="@(() => TwitterIconClicked())">
                         <i class="fa-brands fa-twitter"></i>
                     </a>
 
@@ -39,41 +42,26 @@
                     <a class="btn btn-link btn-floating btn-sm text-dark m-1"
                        href="#!"
                        role="button"
-                       data-mdb-ripple-color="dark">
+                       data-mdb-ripple-color="dark" @onclick="@(() => InstaGramIconClicked())">
                         <i class="fa-brands fa-instagram"></i>
-                    </a>
-
-                    <!-- Email -->
-                    <a class="btn btn-link btn-floating btn-sm text-dark m-1"
-                       href="#!"
-                       role="button"
-                       data-mdb-ripple-color="dark">
-                        <i class="fa-solid fa-envelope"></i>
-                    </a>
-
-                    <!-- Google -->
-                    <a class="btn btn-link btn-floating btn-sm text-dark m-1"
-                       href="https://daisy@tuomokepamoja.africa"
-                       role="button"
-                       data-mdb-ripple-color="dark">
-                        <i class="fa-brands fa-google"></i>
                     </a>
 
                     <!-- Linkedin -->
                     <a class="btn btn-link btn-floating btn-sm text-dark m-1"
                        href="#!"
                        role="button"
-                       data-mdb-ripple-color="dark">
+                       data-mdb-ripple-color="dark" @onclick="@(() => LinkedInIconClicked())">
                         <i class="fa-brands fa-linkedin-in"></i>
                     </a>
 
-                    <!-- Github -->
+                    <!-- Email -->
                     <a class="btn btn-link btn-floating btn-sm text-dark m-1"
                        href="#!"
                        role="button"
-                       data-mdb-ripple-color="dark">
-                        <i class="fa-brands fa-github"></i>
+                       data-mdb-ripple-color="dark" @onclick="@(() => EmailIconClicked())">
+                        <i class="fa-solid fa-envelope"></i>
                     </a>
+
                 </section>
 
             </div>
@@ -94,4 +82,34 @@
     [Parameter]
     public DateTime Copy { get; set; } = DateTime.Today;
 
+
+    private async void WhatsAppIconClicked()
+    {
+        await JS.InvokeVoidAsync("open", "https://web.whatsapp.com/", "_blank");
+    }
+
+    private async void FacebookIconClicked()
+    {
+        await JS.InvokeVoidAsync("open", "https://www.facebook.com/", "_blank");
+    }
+
+    private async void TwitterIconClicked()
+    {
+        await JS.InvokeVoidAsync("open", "https://twitter.com/", "_blank");
+    }
+
+    private async void InstaGramIconClicked()
+    {
+        await JS.InvokeVoidAsync("open", "https://www.instagram.com/", "_blank");
+    }
+
+    private async void LinkedInIconClicked()
+    {
+        await JS.InvokeVoidAsync("open", "https://www.linkedin.com/", "_blank");
+    }
+
+    private void EmailIconClicked()
+    {
+        NavigationManager.NavigateTo("mailto:allan.alex0803@gmail.com");
+    }
 }

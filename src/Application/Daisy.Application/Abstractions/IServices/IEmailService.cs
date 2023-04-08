@@ -10,6 +10,6 @@ namespace Daisy.Application.Abstractions.IServices
 {
     public interface IEmailService
     {
-        Task<PasswordResetEmailResponse> SendPasswordResetEmail(string emailAddress);
+        Task<PasswordResetEmailResponse> SendPasswordResetEmail(string emailAddress, string token, string resetUrl);
     }
 }

@@ -49,6 +49,8 @@
 
 @code {
 
+    [CascadingParameter]
+    public Error? Error { get; set; }
 
     GetAllEventsResponse? getAllEventsResponse = new();
     GetEventByIdResponse? getEventByIdResponse = new();
@@ -73,11 +75,11 @@
             }
 
             events = response;
-            
+
         }
         catch (Exception ex)
         {
-            throw new Exception(ex.Message);
+            Error.ProcessException(ex);
         }
 
     }

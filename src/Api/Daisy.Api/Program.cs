@@ -31,7 +31,6 @@ builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection(
 
 builder.Services.AddControllers();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
@@ -86,11 +85,11 @@ builder.Services.AddCors(options =>
       name: CORSOpenPolicy,
       builder => {
           builder.WithOrigins("https://localhost:7144", "http://localhost:5294",
-              "").AllowAnyHeader().AllowAnyMethod();
+              "https://b3ff-41-80-113-231.ngrok-free.app").AllowAnyHeader().AllowAnyMethod();
       });
 });
 
-builder.Services.AddDbContextPool<DBContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<DBContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddSingleton<DapperContext>();
 
 builder.Services.AddIdentity<AppUser, AppRole>().AddEntityFrameworkStores<DBContext>().AddDefaultTokenProviders();
@@ -114,32 +113,6 @@ builder.Services.Configure<IdentityOptions>(options =>
 builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
    opt.TokenLifespan = TimeSpan.FromHours(2));
 
-//builder.Services.ConfigureApplicationCookie(options =>
-//{
-//    options.Cookie.Name = "AppCookie.Tuomoke";
-//    options.Cookie.HttpOnly = true;
-//    options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-//    options.LoginPath = "/Auth/AccessDenied/";
-//    options.AccessDeniedPath = "/Auth/AccessDenied/";
-
-//    //ReturnUrlParameter requires using Microsoft.AspNetCore.Authentication.Cookies;
-//    //options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
-//    options.SlidingExpiration = true;
-
-//    options.Events.OnRedirectToLogin = context =>
-//    {
-//        context.Response.Headers["Location"] = context.RedirectUri;
-//        context.Response.StatusCode = 401;
-//        return Task.CompletedTask;
-//    };
-//    options.Events.OnRedirectToAccessDenied = context =>
-//    {
-//        context.Response.Headers["Location"] = context.RedirectUri;
-//        context.Response.StatusCode = 403;
-//        return Task.CompletedTask;
-//    };
-//});
-
 builder.Services.AddAuthentication((options) =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -148,8 +121,6 @@ builder.Services.AddAuthentication((options) =>
 
 }).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
 {
-    //options.Authority = builder.Configuration["Auth:Jwt:JwtIssuer"];
-    //options.Audience = builder.Configuration["Auth:Jwt:JwtAudience"];
     options.SaveToken = true;
     options.RequireHttpsMetadata = true;
     options.TokenValidationParameters = new TokenValidationParameters
@@ -162,17 +133,24 @@ builder.Services.AddAuthentication((options) =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
+        RequireExpirationTime = true,
+        LifetimeValidator = (notBefore, expires, token, parameters) =>
+        {
+            return expires > DateTime.UtcNow; // check if token has not yet expired
+        }
 
     };
-});//.AddNegotiate();
+});
 
 builder.Services.AddAuthorization(options =>
 {
-    options.DefaultPolicy = new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme).RequireAuthenticatedUser().Build();
+    options.DefaultPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
 
 });
 
+
 builder.Services.AddSingleton(emailConfig);
+builder.Services.AddSingleton(jwtSettings);
 
 builder.Services.AddHttpContextAccessor();
 
@@ -189,8 +167,7 @@ app.ConfigureGlobalExceptionHandler();
 
 if (app.Environment.IsProduction())
 {
-    //app.UseStatusCodePagesWithRedirects("/500/{0}");
-    app.UseExceptionHandler(builder.Configuration["Errors:Prod"]);
+    
 }
 
 
@@ -211,7 +188,7 @@ app.UseCors(CORSOpenPolicy);
 
 app.UseAuthentication();
 
-app.UseAuthorization(); 
+app.UseAuthorization();
 
 app.MapControllers().RequireAuthorization();
 

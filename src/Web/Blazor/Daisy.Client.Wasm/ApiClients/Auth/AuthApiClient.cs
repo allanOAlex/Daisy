@@ -67,7 +67,7 @@ namespace Daisy.Client.Wasm.ApiClients.Auth
             await localStorage.SetItemAsync("authToken", authenticatedUser.Token);
             ((ApiAuthenticationStateProvider)authStateProvider).MarkUserAsAuthenticated(authenticatedUser);
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authenticatedUser.Token);
-
+            
             return authenticatedUser;
 
         }
@@ -94,7 +94,6 @@ namespace Daisy.Client.Wasm.ApiClients.Auth
             await localStorage.RemoveItemAsync("authToken");
             ((ApiAuthenticationStateProvider)authStateProvider).MarkUserAsLoggedOut();
             client.DefaultRequestHeaders.Authorization = null;
-
             return loggedOutUser;
 
         }
@@ -104,12 +103,11 @@ namespace Daisy.Client.Wasm.ApiClients.Auth
             var response = await client.PostAsJsonAsync(config["Api:Routes:Auth:ForgotPassword"], request);
             if (!response.IsSuccessStatusCode)
             {
-                return new ForgotPasswordResponse() { Successful = false, Message = $"Something went wrong | Please contact system admin | {response.ReasonPhrase}" };
+                return new ForgotPasswordResponse() { Successful = false, Message = $"Something went wrong | Please contact system admin " };
             }
 
             var apiResponse = await response.Content.ReadAsStringAsync();
             var passwordForgotResponse = JsonConvert.DeserializeObject<ForgotPasswordResponse>(apiResponse);
-
             return passwordForgotResponse;
 
         }
@@ -119,13 +117,28 @@ namespace Daisy.Client.Wasm.ApiClients.Auth
             var response = await client.PostAsJsonAsync(config["Api:Routes:Auth:ResetPassword"], request);
             if (!response.IsSuccessStatusCode)
             {
-                return new ResetPasswordResponse() { Successful = false, Message = $"Error resetting your password | Please contact system admin | {response.ReasonPhrase}" };
+                var failedApiResponse = await response.Content.ReadAsStringAsync();
+                var failedPasswordResetResponse = JsonConvert.DeserializeObject<ResetPasswordResponse>(failedApiResponse);
+                string errors = string.Join(", ", failedPasswordResetResponse.Errors);
+                return new ResetPasswordResponse() { Successful = false, Message = $"Password reset failed. Please contact system admin | Errors: - {errors} " };
             }
 
             var apiResponse = await response.Content.ReadAsStringAsync();
             var passwordResetResponse = JsonConvert.DeserializeObject<ResetPasswordResponse>(apiResponse);
-
             return passwordResetResponse;
+
+        }
+
+        public async Task<ResetPasswordResponse> ResetUserPassword(string userId, string token)
+        {
+            var response = await client.GetFromJsonAsync<ResetPasswordResponse>($"{config["Api:Routes:Auth:ResetPassword"]}{userId}/{token}");
+            if (!response.Successful)
+            {
+                string errors = string.Join(", ", response.Errors);
+                return new ResetPasswordResponse() { Successful = false, Message = $"Password reset failed. Please contact system admin | Errors: - {errors} " };
+            }
+
+            return response;
 
         }
 

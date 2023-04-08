@@ -12,8 +12,6 @@ namespace Daisy.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [EnableCors("OpenCORSPolicy")]
-    [Authorize]
     public class EventController : ControllerBase
     {
         private readonly IServiceManager serviceManager;

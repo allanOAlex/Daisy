@@ -2,8 +2,10 @@
 using Daisy.Shared.Configs;
 using Daisy.Shared.Requests.Email;
 using Daisy.Shared.Responses.Email;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
 using MimeKit;
+using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Utilities.Net;
 using System;
 using System.Collections.Generic;
@@ -24,14 +26,15 @@ namespace Daisy.Infrastructure.Implementations.Services
             emailConfig = EmailConfig;
         }
 
-        public async Task<PasswordResetEmailResponse> SendPasswordResetEmail(string emailAddress)
+        public async Task<PasswordResetEmailResponse> SendPasswordResetEmail(string emailAddress, string token, string resetUrl)
         {
             try
             {
+                
                 using var smtpClient = new SmtpClient(emailConfig.SmtpServer, emailConfig.Port)
                 {
                     UseDefaultCredentials = false,
-                    Credentials = new NetworkCredential(emailConfig.UserName, emailConfig.Password),
+                    Credentials = new NetworkCredential(emailConfig.UserEmail, emailConfig.Password),
                     EnableSsl = true
                 };
 
@@ -43,37 +46,22 @@ namespace Daisy.Infrastructure.Implementations.Services
                            $" \n" +
                            $"If you did not make this request then please ignore this email. \n" +
                            $" \n" +
-                           $"Otherwise, use the link below and follow the instructions. We’ll have you up and running in no time. \n" +
+                           $"Otherwise, paste the token below in the [Reset Key] section of the password reset form, or \n click on the link below. \n We’ll have you up and running in no time. \n" +
                            $" \n" +
-                           $"{string.Empty} \n" +
-                           $" \n"
+                           $"token:  {token} \n" +
+                           $" \n" +
+                           $"link:  {resetUrl} \n" +
+                           $" \n" +
+                           $" Supporting you is our priorit! \n" +
+                           $" BR!" +
+                           $" \n" + 
+                           $" Please do not reply to this email. \n" + 
+                           $" \n" 
                 };
 
                 await smtpClient.SendMailAsync(message);
 
-                switch (smtpClient.SendMailAsync(message).Status)
-                {
-                    case TaskStatus.Created:
-                        break;
-                    case TaskStatus.WaitingForActivation:
-                        break;
-                    case TaskStatus.WaitingToRun:
-                        break;
-                    case TaskStatus.Running:
-                        break;
-                    case TaskStatus.WaitingForChildrenToComplete:
-                        break;
-                    case TaskStatus.RanToCompletion:
-                        break;
-                    case TaskStatus.Canceled:
-                        break;
-                    case TaskStatus.Faulted:
-                        break;
-                    default:
-                        break;
-                }
-
-                return new PasswordResetEmailResponse() { Successful = true, Message = $"The password reset link has been sent to the email you provided. \nPlease check you email and follow the instructions to reset your password." };
+                return new PasswordResetEmailResponse() { Successful = true, Message = $"A password reset token has been sent to the email you provided. \nPlease check your email and follow instructions to reset your password." };
             }
             catch (Exception ex)
             {

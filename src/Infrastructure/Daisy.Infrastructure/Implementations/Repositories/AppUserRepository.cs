@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Xml;
+using static Dapper.SqlMapper;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Daisy.Infrastructure.Implementations.Repositories
@@ -105,7 +107,20 @@ namespace Daisy.Infrastructure.Implementations.Repositories
         {
             try
             {
-                context.Entry(entity).State = EntityState.Modified;
+                if (context.ChangeTracker.Entries<AppUser>().Any(e => e.Entity.Id == entity.Id))
+                {
+                    context.DetachAllEntities();
+                    var userToUpdate = context.AppUsers.Find(entity.Id);
+                    context.Entry(userToUpdate).State = EntityState.Detached;
+                    userToUpdate = entity;
+                    AppUser user = userToUpdate;
+                    context.Entry(entity).State = EntityState.Modified;
+                }
+                else
+                {
+                    context.AppUsers.Update(entity);
+                }
+
                 return entity;
             }
             catch (Exception ex)

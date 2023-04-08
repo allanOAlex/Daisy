@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -241,6 +242,22 @@ namespace Daisy.Infrastructure.Extensions
             var hash = sha.ComputeHash(bytes);
             return Convert.ToBase64String(hash);
         }
+
+        public static string DecodePasswordResetToken(string encodedKey, out string decodedKey)
+        {
+            try
+            {
+                byte[] bytes = WebEncoders.Base64UrlDecode(encodedKey);
+                return decodedKey = Encoding.UTF8.GetString(bytes);
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+
+        }
+
 
     }
 }

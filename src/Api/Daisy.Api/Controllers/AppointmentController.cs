@@ -32,7 +32,7 @@ namespace Daisy.Api.Controllers
 
         }
 
-        [Authorize(Roles = "SuperAdmin")]
+        [AuthorizeRoles(UserRole.SuperAdmin)]
         [HttpGet("fetchall")]
         public async Task<ActionResult<List<GetAllAppointmentsResponse>>> GetAllAppointments()
         {

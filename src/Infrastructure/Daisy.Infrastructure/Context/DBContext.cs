@@ -166,6 +166,18 @@ namespace Daisy.Infrastructure.Context
 
         }
 
+        public void DetachAllEntities()
+        {
+            var changedEntriesCopy = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Added ||
+                            e.State == EntityState.Modified ||
+                            e.State == EntityState.Deleted)
+                .ToList();
+
+            foreach (var entry in changedEntriesCopy)
+                entry.State = EntityState.Detached;
+        }
+
         public DbSet<Carousel> Carousels { get; set; }
         public DbSet<Event> Events { get; set; }
         public DbSet<Appointment> Appointments { get; set; }

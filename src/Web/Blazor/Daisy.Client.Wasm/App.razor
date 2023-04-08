@@ -9,7 +9,7 @@
                         <text>Please wait ...</text>
                         <span><RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" /></span>
                     </Authorizing>
-                    <NotAuthorized>
+                    @*<NotAuthorized>
                         @if (@context.User.Identity.IsAuthenticated)
                         {
                             <RedirectToAccessDenied />
@@ -19,7 +19,7 @@
                             <RedirectToLogin />
                         }
 
-                    </NotAuthorized>
+                    </NotAuthorized>*@
                 </AuthorizeRouteView>
                 <FocusOnNavigate RouteData="@routeData" Selector="h1" />
             </Found>

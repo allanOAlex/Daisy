@@ -16,7 +16,7 @@
         <div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
             <nav class="flex-column">
                 <div class="nav-item px-3">
-                    <AuthorizeView Context="admin" Roles="SuperAdmin, Admin, User">
+                    <AuthorizeView Context="admin" Roles="SuperAdmin, Admin">
                         <NavLink class="nav-link active" href="#" Match="NavLinkMatch.Prefix" @onclick="()=>expandSubNav = !expandSubNav">
                             <span class="oi oi-wrench" arNia-hidden="true"></span> <strong>Admin</strong>
                         </NavLink>

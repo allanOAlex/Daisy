@@ -117,7 +117,7 @@
             var result = await authApiClient.LogoutWithSignInManager(request);
             if (result.Successful == true)
             {
-                await DialogService.Alert("Logout Successful", "Success!!", new AlertOptions() { OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
+                await DialogService.Alert("Logout Successful", "Success!!", new AlertOptions() {Height = "200px", OkButtonText = "Ok", CloseDialogOnEsc = true, CloseDialogOnOverlayClick = true });
                 DialogService.Close();
                 NavigationManager.NavigateTo("/");
                 

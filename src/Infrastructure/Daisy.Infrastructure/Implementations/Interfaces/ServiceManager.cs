@@ -4,7 +4,9 @@ using Daisy.Application.Abstractions.IServices;
 using Daisy.Domain.Models;
 using Daisy.Infrastructure.Implementations.Services;
 using Daisy.Shared.Configs;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -34,9 +36,12 @@ namespace Daisy.Infrastructure.Implementations.Interfaces
         private readonly IConfiguration config;
         private readonly ILogger<AppUserService> logger;
         private readonly EmailConfiguration emailConfig;
-        
+        private readonly IHttpContextAccessor httpContextAccessor;
 
-        public ServiceManager(IUnitOfWork UnitOfWork, IMapper Mapper, UserManager<AppUser> UserManager, SignInManager<AppUser> SignInManager, IConfiguration Config, IClaimsService ClaimsService, IJwtTokenService JwtTokenService, EmailConfiguration EmailConfig)
+
+
+
+        public ServiceManager(IUnitOfWork UnitOfWork, IMapper Mapper, UserManager<AppUser> UserManager, SignInManager<AppUser> SignInManager, IConfiguration Config, IClaimsService ClaimsService, IJwtTokenService JwtTokenService, EmailConfiguration EmailConfig, IHttpContextAccessor HttpContextAccessor)
         {
             unitOfWork = UnitOfWork;
             mapper = Mapper;
@@ -46,13 +51,14 @@ namespace Daisy.Infrastructure.Implementations.Interfaces
             claimsService = ClaimsService;
             jwtTokenService = JwtTokenService;
             emailConfig = EmailConfig;
+            httpContextAccessor = HttpContextAccessor;
 
             //AppUserService = new AppUserService(unitOfWork, mapper, userManager, logger);
             AppUserService = new AppUserService(unitOfWork, mapper, userManager);
             CarouselService = new CarouselService(unitOfWork, mapper);
             EventService = new EventService(unitOfWork, mapper);
             AppointmentService = new AppointmentService(unitOfWork, mapper, userManager);
-            AuthService = new AuthService(unitOfWork, mapper, signInManager, userManager, config, claimsService, jwtTokenService);
+            AuthService = new AuthService(unitOfWork, mapper, signInManager, userManager, config, claimsService, jwtTokenService, httpContextAccessor);
             RoleService = new RoleService();
             EmailService = new EmailService(emailConfig);
         }
