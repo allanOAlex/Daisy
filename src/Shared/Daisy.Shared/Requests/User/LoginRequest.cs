@@ -16,6 +16,6 @@ namespace Daisy.Shared.Requests.User
         public string? Password { get; set; }
 
         [DefaultValue(false)]
-        public bool? RememberMe { get; set; } = false;
+        public bool RememberMe { get; set; } = false;
     }
 }

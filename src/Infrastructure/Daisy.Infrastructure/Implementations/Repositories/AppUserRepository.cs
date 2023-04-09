@@ -95,7 +95,7 @@ namespace Daisy.Infrastructure.Implementations.Repositories
 
         public IQueryable<AppUser> FindAll()
         {
-            return context.AppUsers.Where(e => e.IsActive == true).OrderByDescending(e => e.Id).AsNoTracking();
+            return context.AppUsers.OrderByDescending(e => e.Id).AsNoTracking();
         }
 
         public IQueryable<AppUser> FindByCondition(Expression<Func<AppUser, bool>> expression)

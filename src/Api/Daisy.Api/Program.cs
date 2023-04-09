@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 string CORSOpenPolicy = "OpenCORSPolicy";
 var builder = WebApplication.CreateBuilder(args);
@@ -140,11 +141,23 @@ builder.Services.AddAuthentication((options) =>
         }
 
     };
+}).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.LoginPath = "/Auth/LoginWithSignInManager";
+    options.LogoutPath = "/Auth/LogoutWithSignInManager";
+    options.Cookie.Name = "Daisy.Cookie";
+    options.ExpireTimeSpan = TimeSpan.FromDays(1);
+    options.SlidingExpiration = true;
 });
 
 builder.Services.AddAuthorization(options =>
 {
     options.DefaultPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+    options.AddPolicy("GeneralUser", policy =>
+    {
+        policy.RequireRole("User");
+
+    }); 
 
 });
 

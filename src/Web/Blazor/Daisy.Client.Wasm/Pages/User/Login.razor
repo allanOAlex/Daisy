@@ -4,58 +4,68 @@
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
 @inject NotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ILogger<Login> logger;
 @inject IJSRuntime JS;
 
-<RadzenCard class="d-flex  p-0 rz-border-radius-4 rz-shadow-10 rounded-3" Style="width: 30%; flex-direction: column; overflow: hidden; ">
-    <RadzenCard Class="rz-shadow-0 rz-border-radius-0 p-3 login-card-hearder" style="text-align: center; background-color:#424874 !important; color:#B5CBDE; width:100%!important;">
-        <RadzenText TextStyle="TextStyle.DisplayH6" TagName="TagName.H2" Class="rz-color-white mb-0">Login</RadzenText>
-    </RadzenCard>
-    <RadzenCard Class="rz-shadow-0 p-4 login-card-body" Style="width:100%!important;">
-        <RadzenTemplateForm TItem="LoginRequest" Data=@model Submit="@(() => HandleLogin(@model))" Action="/">
-            <div class="mb-3">
-                <strong><RadzenLabel Text="Username" Style="font-size:15px; color:#424874;" /></strong>
-                <RadzenTextBox Name="Username" @bind-Value="@model.UserName" Class="w-100" Style="height:30px;" />
-                <RadzenRequiredValidator Text="Username is required" Component="Username" />
-                <RadzenRegexValidator Component="Username" Text="Value must contain 3 or more alphanumeric characters" Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
-            </div>
-            <div class="mb-3">
-                <strong><RadzenLabel Text="Password" Style="font-size:15px;color:#424874;" /></strong>
-                <RadzenPassword Name="Password" @bind-Value="@model.Password" Class="w-100" Style="height:30px;" AutoComplete="false" @oninput=@(args => OnPasswardInput(args.Value.ToString())) />
-                <RadzenRequiredValidator Text="Password is required" Component="Password" />
-                <RadzenRegexValidator Component="Password" Text="@passwordErrorMessage" Pattern="@passwordRegex" Popup=@popup Style="position: relative" />
-            </div>
-            <div class="mb-3">
-                <RadzenCheckBox @bind-Value=@checkBoxValue Name="CheckBox" TValue="bool" Style="font-size:15px;" Change=@(args => RemeberMe(args)) />
-                <RadzenLabel Text="Remember Me" Component="CheckBox" Style="margin-left: 8px; vertical-align: middle;" />
-            </div>
-            <div class="mb-3">
-                <div class="row">
-                    <div class="col">
-                        <RadzenButton ButtonType="ButtonType.Reset" ButtonStyle="ButtonStyle.Secondary" Shade="Shade.Light" Text="Cancel" Icon="highlight_off" Size="ButtonSize.Small" Class=" m-1 w-100" Style="text-transform: none;" Click="@(() => NavigationManager.NavigateTo("/"))" />
-                    </div>
-                    <div class="col">
-                        <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Shade="Shade.Dark" Text="Login" Icon="check_circle" Size="ButtonSize.Small" Class=" m-1 w-100" Style="text-transform: none;" />
-                    </div>
-                </div>
-            </div>
-            <div class="mt-2 d-flex justify-content-center" style="margin: auto; width:100%; ">
-                <a class="nav-link active" aria-current="page" @onclick="@(() => ForgotPassword())">Forgot Password?</a>
-            </div>
-        </RadzenTemplateForm>
-    </RadzenCard>
-</RadzenCard>
 
-@if (ShowErrors)
-{
-    @if (!string.IsNullOrEmpty(validationMessage))
-    {
-        <RadzenCard>
-            <div class="alert alert-danger">@validationMessage</div>
-        </RadzenCard>
-    }
+<div class="flex-container">
+    <div class="flex-item">
+        <div class="card text-center">
+            <div class="card-header h5 " style="background-color:#424874;color:#B5CBDE;">Password Reset</div>
+            <div class="card-body px-5">
+                <RadzenTemplateForm TItem="LoginRequest" Data=@model Submit="@(() => HandleLogin(@model))" Action="/">
+                    <div class="mb-3">
+                        <strong><RadzenLabel Text="Username" Style="font-size:15px; color:#424874;" /></strong>
+                        <RadzenTextBox Name="Username" @bind-Value="@model.UserName" Class="w-100" Style="height:30px;" />
+                        <RadzenRequiredValidator Text="Username is required" Component="Username" />
+                        <RadzenRegexValidator Component="Username" Text="Value must contain 3 or more alphanumeric characters" Pattern="@alphanumericRegex" Popup=@popup Style="position: relative" />
+                    </div>
+                    <div class="mb-3">
+                        <strong><RadzenLabel Text="Password" Style="font-size:15px;color:#424874;" /></strong>
+                        <RadzenPassword Name="Password" @bind-Value="@model.Password" Class="w-100" Style="height:30px;" AutoComplete="false" @oninput=@(args => OnPasswardInput(args.Value.ToString())) />
+                        <RadzenRequiredValidator Text="Password is required" Component="Password" />
+                        <RadzenRegexValidator Component="Password" Text="@passwordErrorMessage" Pattern="@passwordRegex" Popup=@popup Style="position: relative" />
+                    </div>
+                    <div class="mb-3">
+                        <RadzenCheckBox @bind-Value=@checkBoxValue Name="CheckBox" TValue="bool" Style="font-size:15px;" Change=@(args => RemeberMe(args)) />
+                        <RadzenLabel Text="Remember Me" Component="CheckBox" Style="margin-left: 8px; vertical-align: middle;" />
+                    </div>
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col">
+                                <RadzenButton ButtonType="ButtonType.Reset" ButtonStyle="ButtonStyle.Secondary" Shade="Shade.Light" Text="Cancel" Icon="highlight_off" Size="ButtonSize.Small" Class=" m-1 w-100" Style="text-transform: none;" Click="@(() => NavigationManager.NavigateTo("/"))" />
+                            </div>
+                            <div class="col">
+                                <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Shade="Shade.Dark" Text="Login" Icon="check_circle" Size="ButtonSize.Small" Class=" m-1 w-100" Style="text-transform: none;" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-2 d-flex justify-content-center" style="margin: auto; width:100%; ">
+                        <a class="nav-link active" aria-current="page" @onclick="@(() => ForgotPassword())">Forgot Password?</a>
+                    </div>
+                </RadzenTemplateForm>
+            </div>
+        </div>
+    </div>
 
-}
+    <br />
+    <div class="flex-item">
+        @if (ShowErrors)
+        {
+            @if (!string.IsNullOrEmpty(validationMessage))
+            {
+                <RadzenCard>
+                    <div class="alert alert-danger">@validationMessage</div>
+                    <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Light" Text="Ok" Size="ButtonSize.Small" Class=" mt-2 w-10 float-end" Style="text-transform: none;" Click="@(() => ShowErrors = !ShowErrors)" />
+                </RadzenCard>
+            }
+
+        }
+        
+    </div>
+</div>
+
 
 
 @code {
@@ -88,7 +98,7 @@
 
     bool popup;
     bool checkBoxValue;
-    private bool ShowErrors;
+    private bool ShowErrors = true;
     private string error = "";
     private IEnumerable<string>? Errors;
 
@@ -105,7 +115,7 @@
         base.OnParametersSet();
     }
 
-    private async Task HandleLogin(LoginRequest loginRequest)
+    private async void HandleLogin(LoginRequest loginRequest)
     {
         try
         {
@@ -113,15 +123,16 @@
             var response = await authApiClient.LoginWithSignInManager(loginRequest);
             if (!response.Successful)
             {
-                ShowErrors = true;
                 validationMessage = response.Message;
-                logger.LogInformation($"Login failed for username: {loginRequest.UserName}.");
+                logger.LogError($"Login failed for username: {loginRequest.UserName}.");
+
+                return;
 
             }
             else
             {
-                logger.LogError($"Successful login for username: {loginRequest.UserName}.");
-
+                ShowErrors = !ShowErrors;
+                logger.LogInformation($"Successful login for username: {loginRequest.UserName}.");
             }
         }
         catch (Exception ex)
@@ -135,7 +146,7 @@
     void ForgotPassword()
     {
         NavigationManager.NavigateTo("/forgotpassword");
-        
+
     }
 
     public async Task ForgotPasswordDialog()
@@ -169,7 +180,7 @@
         model.Password = value;
     }
 
-    void RemeberMe(bool? value)
+    void RemeberMe(bool value)
     {
         model.RememberMe = value;
     }
@@ -180,6 +191,7 @@
     }
 
     
+
     #endregion  
 
     

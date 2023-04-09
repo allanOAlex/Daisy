@@ -47,7 +47,6 @@ namespace Daisy.Api.Controllers
         public async Task<ActionResult<LoginResponse>> LoginWithSignInManager(LoginRequest model)
         {
             var loggedInUser = await serviceManager.AuthService.LoginWithSignInManager(model);
-
             return loggedInUser.Successful == true ? StatusCode(StatusCodes.Status200OK, loggedInUser) : StatusCode(StatusCodes.Status401Unauthorized, loggedInUser);
 
         }
@@ -57,7 +56,6 @@ namespace Daisy.Api.Controllers
         public async Task<ActionResult<LogoutResponse>> LogoutWithSignInManager(LogoutRequest model)
         {
             var loggedOutUser = await serviceManager.AuthService.LogoutWithSignInManager(model);
-
             return loggedOutUser.Successful == true ? StatusCode(StatusCodes.Status200OK, loggedOutUser) : StatusCode(StatusCodes.Status500InternalServerError, loggedOutUser);
 
         }
@@ -74,12 +72,8 @@ namespace Daisy.Api.Controllers
                     return StatusCode(StatusCodes.Status500InternalServerError, response);
                 }
 
-                var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(response.Token));
-                var callbackUrl = linkGenerator.GetUriByPage(HttpContext, scheme: HttpContext.Request.Scheme, values: new { userId = response.Id, token = response.Token });
-                response.ResetUrl = Url.Action("ResetPassword", "Auth", new {UserId = response.Id, Token = encodedToken }, Request.Scheme);
-                response.ResetUrl = response.ResetUrl.Replace("https://localhost:7060/api/auth", "https://localhost:7144");
+                var passwordForgotResponse = await serviceManager.EmailService.SendPasswordResetEmail(request.Email, response.Token, response.ResetUrl);
 
-                var passwordForgotResponse = await serviceManager.EmailService.SendPasswordResetEmail(request.Email, encodedToken, response.ResetUrl);
                 return passwordForgotResponse.Successful == true ? StatusCode(StatusCodes.Status200OK, passwordForgotResponse) : StatusCode(StatusCodes.Status500InternalServerError, passwordForgotResponse);
             }
             catch (Exception)
@@ -94,7 +88,7 @@ namespace Daisy.Api.Controllers
         [HttpPost("resetpassword")]
         public async Task<ActionResult<ResetPasswordResponse>> ResetPassword(ResetPasswordRequest request)
         {
-            var passwordResetResponse = await serviceManager.AuthService.ResetPassword(request);
+            var passwordResetResponse = await serviceManager.AuthService.ResetUserPassword(request);
 
             return passwordResetResponse.Successful == true ? StatusCode(StatusCodes.Status200OK, passwordResetResponse) : StatusCode(StatusCodes.Status500InternalServerError, passwordResetResponse);
         }
@@ -115,6 +109,7 @@ namespace Daisy.Api.Controllers
             var passwordResetResponse = await serviceManager.AuthService.ResetUserPassword(request);
             return passwordResetResponse.Successful == true ? StatusCode(StatusCodes.Status200OK, passwordResetResponse) : StatusCode(StatusCodes.Status500InternalServerError, passwordResetResponse);
         }
+
 
     }
 }
