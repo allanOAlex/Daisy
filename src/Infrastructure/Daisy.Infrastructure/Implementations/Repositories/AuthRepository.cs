@@ -45,24 +45,6 @@ namespace Daisy.Infrastructure.Implementations.Repositories
             throw new NotImplementedException();
         }
 
-        public async Task<AppUser> LoginWithSignInManager(AppUser entity)
-        {
-            try
-            {
-                var result = await signInManager.PasswordSignInAsync(entity.UserName, entity.Password, entity.RememberMe, false);
-                if (result.Succeeded)
-                {
-                    entity.Successful = true;
-                    return entity;
-                }
-                return entity;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
         public async Task<AppUser> LogoutWithSignInManager(AppUser entity)
         {
             try
@@ -84,7 +66,6 @@ namespace Daisy.Infrastructure.Implementations.Repositories
                 var result = await userManager.ResetPasswordAsync(entity, entity.PasswordResetToken, entity.Password);
                 if (result.Succeeded)
                 {
-                    entity.Successful = true;
                     return new ResetPasswordResponse { Successful = true, Message = "Password reset successfully!"};
                 }
                 else

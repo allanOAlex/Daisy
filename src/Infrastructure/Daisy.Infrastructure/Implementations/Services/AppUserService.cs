@@ -56,7 +56,6 @@ namespace Daisy.Infrastructure.Implementations.Services
                 var destination = requestMap.Map<CreateUserRequest, AppUser>(createUserRequest);
                 destination.PasswordHash = ph.HashPassword(destination, destination.Password);
                 destination.Password = destination.PasswordHash;
-                destination.IsActive = true;
                 AppUser userToCreate = await unitOfWork.AppUsers.CreateWithUserManager(destination);
                 var result = responseMap.Map<AppUser, CreateUserResponse>(userToCreate);
 

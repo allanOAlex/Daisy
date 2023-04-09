@@ -91,36 +91,10 @@ namespace Daisy.Infrastructure.Implementations.Services
                 switch (user)
                 {
                     case null:
-                        return new LoginResponse { Successful = false, Message = "User does not exist." };
+                        return new LoginResponse { Successful = false, Message = "Username does not exist." };
                     
                     default:
-                        case var obj when user != null:
-                            switch (await userManager.CheckPasswordAsync(user, loginRequest.Password))
-                            {
-                                case false:
-                                    return new LoginResponse { Successful = false, Message = "Invalid username and password combination." };
-
-                                case true:
-                                    switch (new PasswordHasher<AppUser>().VerifyHashedPassword(user, user.PasswordHash, loginRequest.Password))
-                                    {
-                                        case PasswordVerificationResult.Failed:
-                                            return new LoginResponse { Successful = false, Message = "Password verification failed." };
-
-                                        case PasswordVerificationResult.Success:
-                                            break;
-
-                                        case PasswordVerificationResult.SuccessRehashNeeded:
-                                            var passHash = new PasswordHasher<AppUser>().HashPassword(user, loginRequest.Password);
-                                            //save the hashed password to db
-                                            break;
-
-                                        default:
-                                            break;
-                                    }
-                                
-                                break;
-                                
-                            }
+                        
                         break;
                 }
 
@@ -131,17 +105,8 @@ namespace Daisy.Infrastructure.Implementations.Services
                     throw new SecurityTokenValidationException($"Error|Token is Invalid");
                 }
 
-                var request = new MapperConfiguration(cfg => cfg.CreateMap<LoginRequest, AppUser>());
-                var response = new MapperConfiguration(cfg => cfg.CreateMap<AppUser, LoginResponse>());
-
-                IMapper requestMap = request.CreateMapper();
-                IMapper responseMap = response.CreateMapper();
-
-                var destination = requestMap.Map<LoginRequest, AppUser>(loginRequest);
-                AppUser userToLogin = await unitOfWork.Auth.LoginWithSignInManager(destination);
-                var result = responseMap.Map<AppUser, LoginResponse>(userToLogin);
-
-                return result.Successful == true ? new LoginResponse { Successful = true, Message = "Login Successful!", Token = new JwtSecurityTokenHandler().WriteToken(userToken), UserName = user.UserName, FirstName = user.FirstName, LastName = user.LastName, IsAuthenticated = true } : new LoginResponse { Successful = false, Message = "Invalid username/ password combination", IsAuthenticated = false };
+                var result = await signInManager.PasswordSignInAsync(user.UserName, loginRequest.Password, loginRequest.RememberMe, false);
+                return result.Succeeded ? new LoginResponse { Successful = true, Message = "Login Successful!", Token = new JwtSecurityTokenHandler().WriteToken(userToken), UserName = user.UserName, FirstName = user.FirstName, LastName = user.LastName, IsAuthenticated = true } : new LoginResponse { Successful = false, Message = "Invalid username/ password combination", IsAuthenticated = false };
 
 
             }
@@ -219,7 +184,11 @@ namespace Daisy.Infrastructure.Implementations.Services
                     AppUser appUser = unitOfWork.AppUsers.Update(destination);
                     await unitOfWork.CompleteAsync();
                     var result = responseMap.Map<AppUser, ForgotPasswordResponse>(appUser);
-                    return new ForgotPasswordResponse { Successful = true, Id = user.Id, Token = passwordResetToken };
+                    result.Successful = true;
+                    var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(passwordResetToken));
+
+                    return result.Successful == true ? new ForgotPasswordResponse { Successful = true, Id = user.Id, Token = encodedToken, 
+                        ResetUrl = $"{configuration["UrlConfigs:RestPassBaseUrl"]}/passwordreset/{user.Id}/{encodedToken}" } : new ForgotPasswordResponse { Successful = false, Message = "Error while trying to reset your password.", Id = user.Id, Token = passwordResetToken };
                 }
                 catch (DbUpdateConcurrencyException ex)
                 {
@@ -240,12 +209,18 @@ namespace Daisy.Infrastructure.Implementations.Services
             {
                 AuthExtensions.DecodePasswordResetToken(resetPasswordRequest.Token, out string decodedKey);
 
-                resetPasswordRequest.Token = decodedKey;
                 var user = userManager.Users.FirstOrDefault(user => user.PasswordResetToken == decodedKey);
                 if (user == null)
                 {
                     return new ResetPasswordResponse { Successful = false, Message = "NotFound|Sorry, we could not find a user with the specified email - Reset Key might be invalid" };
                 }
+
+                var passResetToken = await ValidatePasswordResetToken(resetPasswordRequest.Token);
+                if (passResetToken != user.PasswordResetToken)
+                {
+                    return new ResetPasswordResponse { Successful = false, Message = $"Invalid password reset key" };
+                }
+                resetPasswordRequest.Token = decodedKey;
 
                 var request = new MapperConfiguration(cfg => cfg.CreateMap<ResetPasswordRequest, AppUser>());
                 var response = new MapperConfiguration(cfg => cfg.CreateMap<AppUser, ResetPasswordResponse>());
@@ -253,7 +228,6 @@ namespace Daisy.Infrastructure.Implementations.Services
                 IMapper responseMap = request.CreateMapper();
 
                 var destination = requestMap.Map<ResetPasswordRequest, AppUser>(resetPasswordRequest);
-                destination.PasswordResetToken = resetPasswordRequest.Token;
                 var result = await unitOfWork.Auth.ResetPassword(destination);
 
                 return result.Successful == true ? new ResetPasswordResponse { Successful = true, Message = $"Your password has been reset. Please <a class = " + " nav-link active" + " aria-current= " + "page" + "@onclick=" + "@(() => Login())>click here to log in</a>" } : new ResetPasswordResponse { Successful = false, Message = $"{result.Message}", Errors = result.Errors};
@@ -276,6 +250,7 @@ namespace Daisy.Infrastructure.Implementations.Services
                 }
 
                 var result = await userManager.VerifyUserTokenAsync(user, userManager.Options.Tokens.PasswordResetTokenProvider, "ResetPassword", await ValidatePasswordResetToken(resetPasswordRequest.Token));
+
                 if (!result)
                 {
                     return new ResetPasswordResponse { Successful = false, Message = $"Invalid password reset key" };

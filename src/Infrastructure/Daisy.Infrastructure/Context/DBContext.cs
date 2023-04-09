@@ -60,9 +60,6 @@ namespace Daisy.Infrastructure.Context
                     PhoneNumber = string.Empty,
                     PhoneNumberConfirmed = false,
                     CreatedOn = DateTime.Now,
-                    IsApproved= true,
-                    ApprovedOn = DateTime.Now,
-                    IsActive= true,
                     SecurityStamp = Guid.NewGuid().ToString(),
 
                 },
@@ -82,9 +79,6 @@ namespace Daisy.Infrastructure.Context
                     PhoneNumber = string.Empty,
                     PhoneNumberConfirmed = false,
                     CreatedOn = DateTime.Now,
-                    IsApproved= true,
-                    ApprovedOn = DateTime.Now,
-                    IsActive= true,
                     SecurityStamp = Guid.NewGuid().ToString(),
 
                 },
