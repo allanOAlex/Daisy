@@ -2,7 +2,7 @@
 @inject HttpClient Http
 @inject DialogService DialogService
 @inject ICarouselApiClient carouselApiClient
-
+@attribute [AllowAnonymous]
 
 
 @if (carousels.Count() > 0)

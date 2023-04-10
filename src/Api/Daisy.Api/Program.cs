@@ -85,8 +85,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(
       name: CORSOpenPolicy,
       builder => {
-          builder.WithOrigins("https://localhost:7144", "http://localhost:5294",
-              "https://b3ff-41-80-113-231.ngrok-free.app").AllowAnyHeader().AllowAnyMethod();
+          builder.WithOrigins("https://localhost:7144", "https://localhost:8082", "").AllowAnyHeader().AllowAnyMethod();
       });
 });
 
@@ -152,12 +151,19 @@ builder.Services.AddAuthentication((options) =>
 
 builder.Services.AddAuthorization(options =>
 {
-    options.DefaultPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
-    options.AddPolicy("GeneralUser", policy =>
-    {
-        policy.RequireRole("User");
+    
+    options.DefaultPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().RequireRole("User").Build();
 
-    }); 
+    //options.AddPolicy("AllowAnonymous", policy =>
+    //{
+    //    policy.RequireAssertion(context => !context.User.Identity.IsAuthenticated);
+    //});
+    //options.AddPolicy("GeneralUser", policy =>
+    //{
+    //    policy.RequireRole("User");
+
+    //});
+
 
 });
 
@@ -203,6 +209,7 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-app.MapControllers().RequireAuthorization();
+//app.MapControllers().RequireAuthorization();
+app.MapControllers();
 
 app.Run();
