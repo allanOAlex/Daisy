@@ -5,6 +5,7 @@
 @inject NavigationManager navigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @attribute [AllowAnonymous]
+@attribute [Authorize(Policy = "AllowAnonymous")]
 
 <PageTitle>Tuomoke</PageTitle>
 
@@ -48,7 +49,7 @@
 
 
         var auth = AuthState.Result;
-        if (auth.User.Identity.IsAuthenticated)
+        if (auth.User.Identity.IsAuthenticated & auth.User.Identity.Name != "Anonymous")
         {
             NotificationService.Notify(new NotificationMessage
                 {

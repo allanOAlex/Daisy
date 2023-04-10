@@ -31,6 +31,7 @@ using System.Security.Claims;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using static Dapper.SqlMapper;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
@@ -167,7 +168,8 @@ namespace Daisy.Infrastructure.Implementations.Services
                     return new ForgotPasswordResponse { Successful = false, Message = "NotFound|Sorry, we could not find a user with the specified email" };
                 }
 
-                var passwordResetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+                //var passwordResetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+                var passwordResetToken = AuthExtensions.GeneratePasswordResetToken(user.Email, out string token);
 
                 var request = new MapperConfiguration(cfg => cfg.CreateMap<ForgotPasswordRequest, AppUser>().ForMember(dest => dest.Id, opt => opt.Ignore()).ForAllMembers(opts => opts.Condition((src, dest, srcMember, destMember) => srcMember != null && !srcMember.Equals(destMember))));
                 var response = new MapperConfiguration(cfg => cfg.CreateMap<AppUser, ForgotPasswordResponse>());
@@ -186,9 +188,9 @@ namespace Daisy.Infrastructure.Implementations.Services
                     var result = responseMap.Map<AppUser, ForgotPasswordResponse>(appUser);
                     result.Successful = true;
                     var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(passwordResetToken));
+                    var resetUrl = $"{configuration["UrlConfigs:RestPassBaseUrl"]}/passwordreset/{user.Id}/{encodedToken}";
 
-                    return result.Successful == true ? new ForgotPasswordResponse { Successful = true, Id = user.Id, Token = encodedToken, 
-                        ResetUrl = $"{configuration["UrlConfigs:RestPassBaseUrl"]}/passwordreset/{user.Id}/{encodedToken}" } : new ForgotPasswordResponse { Successful = false, Message = "Error while trying to reset your password.", Id = user.Id, Token = passwordResetToken };
+                    return result.Successful == true ? new ForgotPasswordResponse { Successful = true, Id = user.Id, Token = encodedToken, ResetUrl = resetUrl } : new ForgotPasswordResponse { Successful = false, Message = "Error while trying to reset your password.", Id = user.Id, Token = passwordResetToken };
                 }
                 catch (DbUpdateConcurrencyException ex)
                 {
@@ -255,6 +257,8 @@ namespace Daisy.Infrastructure.Implementations.Services
                 {
                     return new ResetPasswordResponse { Successful = false, Message = $"Invalid password reset key" };
                 }
+
+
 
                 var passReset = await userManager.ResetPasswordAsync(user, user.PasswordResetToken, resetPasswordRequest.Password);
                 List<string> errors = new();

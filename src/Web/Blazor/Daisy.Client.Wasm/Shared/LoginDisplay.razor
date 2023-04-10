@@ -6,23 +6,25 @@
     <AuthorizeView>
         <Authorized>
             <li class="nav-item">
-                @if (@context.User.Identity.Name != null)
+                @if (@context.User.Identity.Name != null & @context.User.Identity.Name != "Anonymous")
                 {
                     
                     <a class="nav-link active" style="color:white;" aria-current="page"><strong>Hello, @context.User.Identity.Name.Replace("[", "").Replace("]", "").Replace("\"", "").Replace(",", " ")!</strong></a>
                 }
                 else
                 {
-                    @if (userClaims != null)
-                    {
-                        <a class="nav-link active" style="color:white;" aria-current="page"><strong>Hello, @userClaims.FirstOrDefault(c => c.Type.Equals("name", StringComparison.OrdinalIgnoreCase))?.Value!</strong></a>
-                    }
+                    NotAnonymous = !NotAnonymous;
+                    <a class="nav-link active" style="color:white;" aria-current="page" @onclick="@(() => Login())"><strong>@LoginText</strong></a>
                 }
                 
             </li>
-            <li class="nav-item">
-                <a class="nav-link active" style="color:white;" aria-current="page" @onclick="@(() => LogoutDialog())"><strong>Logout</strong></a>
-            </li>
+            @if (NotAnonymous)
+            {
+                <li class="nav-item">
+                    <a class="nav-link active" style="color:white;" aria-current="page" @onclick="@(() => LogoutDialog())"><strong>Logout</strong></a>
+                </li>
+            }
+            
         </Authorized>
         <NotAuthorized>
             <li class="nav-item">
@@ -50,7 +52,7 @@
     public string FirstName { get; set; } = $"";
     public string LastName { get; set; } = $"";
     public string DisplayName { get; set; } = $"";
-
+    private bool NotAnonymous = true;
 
     protected override async Task OnInitializedAsync()
     {
