@@ -1,4 +1,5 @@
-﻿using Daisy.Shared.Requests.User;
+﻿using Daisy.Domain.Models;
+using Daisy.Shared.Requests.User;
 using Daisy.Shared.Responses.Auth;
 using Daisy.Shared.Responses.User;
 using Microsoft.IdentityModel.Tokens;
@@ -16,9 +17,13 @@ namespace Daisy.Application.Abstractions.IServices
         Task<LoginResponse> LoginWithSignInManager(LoginRequest loginRequest);
         Task<LogoutResponse> LogoutWithSignInManager(LogoutRequest logoutRequest);
         Task<ForgotPasswordResponse> ForgotPassword(ForgotPasswordRequest request);
+        Task<ForgotPasswordResponse> ForgotUserPassword(ForgotPasswordRequest request);
         Task<ResetPasswordResponse> ResetPassword(ResetPasswordRequest resetPasswordRequest);
         Task<ResetPasswordResponse> ResetUserPassword(ResetPasswordRequest resetPasswordRequest);
+        Task<ResetPasswordResponse> PasswordReset(ResetPasswordRequest resetPasswordRequest);
+        Task<ResetPasswordResponse> UserPasswordReset(ResetPasswordRequest resetPasswordRequest);
         Task<string> ValidatePasswordResetToken(string token);
+        Task<string> ResetPasswordAsync(AppUser appUser, string token);
         Task<PassResetTokenValidationResponse> ValidateJwtPasswordResetToken(string token);
         bool IsTokenValid(SecurityToken token);
         

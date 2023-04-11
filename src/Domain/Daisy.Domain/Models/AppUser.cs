@@ -24,6 +24,8 @@ namespace Daisy.Domain.Models
         public DateTime LoginTime { get; set; }
         public DateTime LastLogin { get; set; }
         public DateTime LogoutTime { get; set; }
+
+        [NotMapped]
         public string? Password { get; set; }
         public string? PasswordResetToken { get; set; }
 
