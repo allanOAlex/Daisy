@@ -214,14 +214,22 @@ namespace Daisy.Infrastructure.Extensions
             }
         }
 
-        public static string SecurityKey(out string secureRandomString)
+        public static string GenerateSecureRandomString(out string secureRandomString)
         {
-            secureRandomString = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            byte[] bytes = new byte[64];
+            RandomNumberGenerator.Fill(bytes);
+            secureRandomString = Convert.ToBase64String(bytes);
+            return secureRandomString;
+        }
+
+        public static string SecurityKey(out string hashString)
+        {
+            string secureRandomString = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
             using (var sha = SHA512.Create())
             {
                 var bytes = Encoding.UTF8.GetBytes(secureRandomString);
                 var hash = sha.ComputeHash(bytes);
-                var hashString = Convert.ToBase64String(hash);
+                hashString = Convert.ToBase64String(hash);
 
                 return hashString;
             }
@@ -241,6 +249,28 @@ namespace Daisy.Infrastructure.Extensions
             var bytes = Encoding.UTF8.GetBytes(value);
             var hash = sha.ComputeHash(bytes);
             return Convert.ToBase64String(hash);
+        }
+
+        public static string GeneratePasswordResetToken(string email, out string passwordResetToken)
+        {
+            try
+            {
+                GenerateSecureRandomString(out string secureRandomString);
+                using (var sha256 = SHA256.Create())
+                {
+                    var salt = secureRandomString + email;
+                    var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(salt));
+                    return passwordResetToken = Convert.ToBase64String(hash);
+                }
+                
+                
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+
         }
 
         public static string DecodePasswordResetToken(string encodedKey, out string decodedKey)
