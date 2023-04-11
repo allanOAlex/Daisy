@@ -52,11 +52,14 @@ namespace Daisy.Infrastructure.Implementations.Services
                            $" \n" +
                            $"link:  {resetUrl} \n" +
                            $" \n" +
-                           $" Supporting you is our priorit! \n" +
+                           $" \n" +
+                           $" Please do not reply to this email. \n" +
+                           $" Supporting you is our priority! \n" +
+                           $" \n" +
+                           $" \n" +
                            $" BR!" +
-                           $" \n" + 
-                           $" Please do not reply to this email. \n" + 
                            $" \n" 
+                           
                 };
 
                 await smtpClient.SendMailAsync(message);

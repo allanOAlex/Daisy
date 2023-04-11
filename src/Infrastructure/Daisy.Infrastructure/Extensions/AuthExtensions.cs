@@ -57,7 +57,7 @@ namespace Daisy.Infrastructure.Extensions
             }
         }
 
-        public static void GenerateKey(out string keyBase64)
+        public static void AesGenerateKey(out string keyBase64)
         {
             using (Aes aesAlgorithm = Aes.Create())
             {
@@ -68,7 +68,7 @@ namespace Daisy.Infrastructure.Extensions
             }
         }
 
-        public static string EncryptKey(string plainText, string keyBase64, out string vectorBase64)
+        public static string AesEncryptKey(string plainText, string keyBase64, out string vectorBase64)
         {
             using (Aes aesAlgorithm = Aes.Create())
             {
@@ -100,7 +100,7 @@ namespace Daisy.Infrastructure.Extensions
             }
         }
 
-        private static string DecryptKey(string cipherText, string keyBase64, string vectorBase64)
+        private static string AesDecryptKey(string cipherText, string keyBase64, string vectorBase64)
         {
             using (Aes aesAlgorithm = Aes.Create())
             {
@@ -180,7 +180,7 @@ namespace Daisy.Infrastructure.Extensions
         {
             int length = 30; 
             StringBuilder sb = new StringBuilder();
-            Random random = new Random();
+            //Random random = new Random();
 
             char letter;
 
@@ -251,6 +251,7 @@ namespace Daisy.Infrastructure.Extensions
             return Convert.ToBase64String(hash);
         }
 
+
         public static string GeneratePasswordResetToken(string email, out string passwordResetToken)
         {
             try
@@ -264,6 +265,21 @@ namespace Daisy.Infrastructure.Extensions
                 }
                 
                 
+
+        public static string GeneratePasswordResetToken(string email, out string token)
+        {
+            try
+            {
+                string salt = GenerateRandomString();
+                using (var sha = SHA512.Create())
+                {
+                    var bytes = Encoding.UTF8.GetBytes(email+salt);
+                    var hash = sha.ComputeHash(bytes);
+                    token = Convert.ToBase64String(hash);
+
+                    return token;
+                }
+
             }
             catch (Exception ex)
             {

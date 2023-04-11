@@ -32,7 +32,11 @@ namespace Daisy.Client.Wasm.AuthProviders
 
             if (string.IsNullOrWhiteSpace(savedToken))
             {
-                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, "Anonymous"),
+                    new Claim(ClaimTypes.Role, "User")
+                }, "jwt")));
             }
 
             AuthExtensions.savedToken = savedToken;

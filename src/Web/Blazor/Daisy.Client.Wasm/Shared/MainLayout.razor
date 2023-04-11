@@ -4,6 +4,7 @@
 @inject HttpClient Http
 @inject DialogService DialogService
 @implements IDisposable
+@attribute [AllowAnonymous]
 
 <RadzenDialog />
 <RadzenNotification />
@@ -16,12 +17,15 @@
     
     <AuthorizeView>
         <Authorized>
-            <div class="sidebar">
-                <NavMenu />
-            </div>
+            @if (@context.User.Identity.Name != null & @context.User.Identity.Name != "Anonymous")
+            {
+                <div class="sidebar">
+                    <NavMenu />
+                </div>
+            }
+            
         </Authorized>
     </AuthorizeView>
-    
     
     <main >
         <nav class="navbar fixed-top" style="background-color:#424874; z-index:1; ">
@@ -64,6 +68,8 @@
 
     private ErrorBoundary? errorBoundary;
 
+    private string? anonymous;
+
     private IList<Claim> userClaim
     {
         get
@@ -85,7 +91,7 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-
+        
     }
 
     protected override void OnParametersSet()
