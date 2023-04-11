@@ -3,6 +3,7 @@ using Daisy.Domain.Models;
 using Daisy.Infrastructure.Context;
 using Daisy.Shared.Responses.User;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;

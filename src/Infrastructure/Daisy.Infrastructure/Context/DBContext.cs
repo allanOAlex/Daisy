@@ -50,7 +50,7 @@ namespace Daisy.Infrastructure.Context
                     Id = 1,
                     UserName = "allanOAlex",
                     NormalizedUserName = "ALLANOALEX",
-                    Password = "PA$5@AUTH",
+                    //Password = "PA$5@AUTH",
                     FirstName = "Allan",
                     LastName = "Alex",
                     OtherNames = string.Empty,
@@ -69,7 +69,7 @@ namespace Daisy.Infrastructure.Context
                     Id = 2,
                     UserName = "allanOdhiambo",
                     NormalizedUserName = "ALLANODHIAMBO",
-                    Password = "PA$5@AUTH",
+                    //Password = "PA$5@AUTH",
                     FirstName = "Allan",
                     LastName = "Odhiambo",
                     OtherNames = string.Empty,
@@ -86,8 +86,8 @@ namespace Daisy.Infrastructure.Context
        
             //set user password
             PasswordHasher<AppUser> ph = new PasswordHasher<AppUser>();
-            appUser1.PasswordHash = ph.HashPassword(appUser1, appUser1.Password);
-            appUser2.PasswordHash = ph.HashPassword(appUser2, appUser2.Password);
+            appUser1.PasswordHash = ph.HashPassword(appUser1, "pa$5@Auth");
+            appUser2.PasswordHash = ph.HashPassword(appUser2, "pa$5@Auth_");
 
             //seed admin role
             builder.Entity<AppRole>(entity =>

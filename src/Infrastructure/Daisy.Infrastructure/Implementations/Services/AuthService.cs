@@ -95,7 +95,6 @@ namespace Daisy.Infrastructure.Implementations.Services
                         return new LoginResponse { Successful = false, Message = "Username does not exist." };
                     
                     default:
-                        
                         break;
                 }
 
@@ -107,6 +106,7 @@ namespace Daisy.Infrastructure.Implementations.Services
                 }
 
                 var result = await signInManager.PasswordSignInAsync(user.UserName, loginRequest.Password, loginRequest.RememberMe, false);
+
                 return result.Succeeded ? new LoginResponse { Successful = true, Message = "Login Successful!", Token = new JwtSecurityTokenHandler().WriteToken(userToken), UserName = user.UserName, FirstName = user.FirstName, LastName = user.LastName, IsAuthenticated = true } : new LoginResponse { Successful = false, Message = "Invalid username/ password combination", IsAuthenticated = false };
 
 
@@ -205,6 +205,57 @@ namespace Daisy.Infrastructure.Implementations.Services
             }
         }
 
+        public async Task<ForgotPasswordResponse> ForgotUserPassword(ForgotPasswordRequest forgotPasswordRequest)
+        {
+            try
+            {
+                var user = await userManager.FindByEmailAsync(forgotPasswordRequest.Email);
+                if (user == null)
+                {
+                    return new ForgotPasswordResponse { Successful = false, Message = "NotFound|Sorry, we could not find a user with the specified email" };
+                }
+
+                AuthExtensions.GeneratePasswordResetToken(forgotPasswordRequest.Email, out string passwordResetToken);
+
+                var request = new MapperConfiguration(cfg => cfg.CreateMap<ForgotPasswordRequest, AppUser>().ForMember(dest => dest.Id, opt => opt.Ignore()).ForAllMembers(opts => opts.Condition((src, dest, srcMember, destMember) => srcMember != null && !srcMember.Equals(destMember))));
+                var response = new MapperConfiguration(cfg => cfg.CreateMap<AppUser, ForgotPasswordResponse>());
+
+                IMapper requestMap = request.CreateMapper();
+                IMapper responseMap = response.CreateMapper();
+
+                var destination = requestMap.Map(forgotPasswordRequest, user);
+                destination.PasswordResetToken = passwordResetToken;
+
+                try
+                {
+                    AppUser appUser = unitOfWork.AppUsers.Update(destination);
+                    await unitOfWork.CompleteAsync();
+                    var result = responseMap.Map<AppUser, ForgotPasswordResponse>(appUser);
+                    result.Successful = true;
+
+                    var encodedToken = HttpUtility.UrlEncode(passwordResetToken);
+
+                    return result.Successful == true ? new ForgotPasswordResponse
+                    {
+                        Successful = true,
+                        Id = user.Id,
+                        Token = encodedToken,
+                        ResetUrl = $"{configuration["UrlConfigs:RestPassBaseUrl"]}/passwordreset/{user.Id}/{encodedToken}"
+                    } : new ForgotPasswordResponse { Successful = false, Message = "Error while trying to reset your password.", Id = user.Id, Token = passwordResetToken };
+                }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    throw ex;
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<ResetPasswordResponse> ResetPassword(ResetPasswordRequest resetPasswordRequest)
         {
             try
@@ -277,6 +328,91 @@ namespace Daisy.Infrastructure.Implementations.Services
             }
         }
 
+        public async Task<ResetPasswordResponse> PasswordReset(ResetPasswordRequest resetPasswordRequest)
+        {
+            try
+            {
+                var user = await userManager.FindByIdAsync(resetPasswordRequest.Id.ToString()); 
+                if (user == null)
+                {
+                    return new ResetPasswordResponse { Successful = false, Message = "NotFound|Sorry, somehow we could not find this user" };
+                }
+
+                var decodedToken = Uri.UnescapeDataString(resetPasswordRequest.Token);
+                if (decodedToken != user.PasswordResetToken)
+                {
+                    return new ResetPasswordResponse { Successful = false, Message = $"Invalid password reset key" };
+                }
+
+                var verifyTokenResult = await userManager.VerifyUserTokenAsync(user, userManager.Options.Tokens.PasswordResetTokenProvider, "ResetPassword", decodedToken);
+                var passReset = await userManager.ResetPasswordAsync(user, user.PasswordResetToken, resetPasswordRequest.Password);
+                List<string> errors = new();
+                foreach (var error in passReset.Errors)
+                {
+                    errors.Add(error.Description);
+                }
+
+                return passReset.Succeeded ? new ResetPasswordResponse { Successful = true, Message = "Password reset successfully!" } : new ResetPasswordResponse { Successful = false, Message = "Password reset failed.", Errors = errors };
+
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+        }
+
+        public async Task<ResetPasswordResponse> UserPasswordReset(ResetPasswordRequest resetPasswordRequest)
+        {
+            try
+            {
+                var user = await userManager.FindByIdAsync(resetPasswordRequest.Id.ToString());
+                if (user == null)
+                {
+                    return new ResetPasswordResponse { Successful = false, Message = "NotFound|Sorry, somehow we could not find this user" };
+                }
+
+                var decodedToken = HttpUtility.UrlDecode(resetPasswordRequest.Token);
+                if (decodedToken != user.PasswordResetToken)
+                {
+                    return new ResetPasswordResponse { Successful = false, Message = $"Invalid password reset key" };
+                }
+
+                var passResetResult = await ResetPasswordAsync(user, resetPasswordRequest.Password);
+
+                var request = new MapperConfiguration(cfg => cfg.CreateMap<ResetPasswordRequest, AppUser>().ForMember(dest => dest.Id, opt => opt.Ignore()).ForAllMembers(opts => opts.Condition((src, dest, srcMember, destMember) => srcMember != null && !srcMember.Equals(destMember))));
+                var response = new MapperConfiguration(cfg => cfg.CreateMap<AppUser, ResetPasswordResponse>());
+
+                IMapper requestMap = request.CreateMapper();
+                IMapper responseMap = response.CreateMapper();
+
+                var destination = requestMap.Map(resetPasswordRequest, user);
+                destination.PasswordHash = passResetResult;
+
+                try
+                {
+                    AppUser appUser = unitOfWork.AppUsers.Update(destination);
+                    await unitOfWork.CompleteAsync();
+                    var result = responseMap.Map<AppUser, ResetPasswordResponse>(appUser);
+                    result.Successful = true;
+
+                    return result.Successful == true ? new ResetPasswordResponse { Successful = true, Message = "Password reset successful!" } : new ResetPasswordResponse { Successful = false, Message = "Error while trying to reset your password." };
+                }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    throw ex;
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+        }
+
+
         public async Task<string> ValidatePasswordResetToken(string token) 
         {
             try
@@ -285,6 +421,20 @@ namespace Daisy.Infrastructure.Implementations.Services
                 string decodedToken = Encoding.UTF8.GetString(tokenBytes);
 
                 return decodedToken;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<string> ResetPasswordAsync(AppUser appUser, string password)
+        {
+            try
+            {
+                PasswordHasher<AppUser> passwordHasher = new();
+                var passwordHash = passwordHasher.HashPassword(appUser, password);
+                return passwordHash;
             }
             catch (Exception ex)
             {
